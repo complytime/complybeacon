@@ -2,6 +2,8 @@ package agent
 
 import (
 	"context"
+	"crypto/tls"
+	"crypto/x509"
 	"errors"
 	"fmt"
 	"log"
@@ -9,6 +11,7 @@ import (
 
 	"golang.org/x/sync/errgroup"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/credentials/insecure"
 
 	"github.com/complytime/complybeacon/proofwatch/source"
@@ -21,30 +24,32 @@ var otelShutdown func(ctx context.Context) error
 // ProofWatch handles processing raw evidence, generating claims, and exporting data.
 type ProofWatch struct {
 	// Options
-	otelEndpoint string
-	sources      []source.Source
+	otelEndpoint  string
+	skipTLS       bool
+	skipTLSVerify bool
+	sources       []source.Source
 }
 
-func New(otelEndpoint string) *ProofWatch {
+func New(otelEndpoint string, skipTLS, skipTLSVerify bool) *ProofWatch {
 	return &ProofWatch{
-		otelEndpoint: otelEndpoint,
+		otelEndpoint:  otelEndpoint,
+		skipTLS:       skipTLS,
+		skipTLSVerify: skipTLSVerify,
 	}
 }
 
 // Run begins scraping for raw evidence and processing it.
 func (s *ProofWatch) Run(ctx context.Context, config *source.Config) error {
 	log.Printf("Configuring log exporting to %s", s.otelEndpoint)
-	var err error
-	conn, err := grpc.NewClient(s.otelEndpoint,
-		// FIXME(jpower432): Configure secure credential options
-		grpc.WithTransportCredentials(insecure.NewCredentials()),
-	)
+
+	conn, err := s.newClient()
 	if err != nil {
-		log.Fatalf("failed to create gRPC connection to collector: %v", err)
+		return fmt.Errorf("failed to create gRPC connection to collector: %w", err)
 	}
+
 	otelShutdown, err = otelSDKSetup(ctx, conn)
 	if err != nil {
-		log.Fatalf("error with instrumentation: %v", err)
+		return fmt.Errorf("error with instrumentation: %w", err)
 	}
 
 	observer := metricsConfigure()
@@ -84,4 +89,20 @@ func (s *ProofWatch) Stop(ctx context.Context) error {
 
 	log.Println("Graceful shutdown complete...")
 	return nil
+}
+
+func (s *ProofWatch) newClient() (*grpc.ClientConn, error) {
+	var creds credentials.TransportCredentials
+	if s.skipTLS {
+		creds = insecure.NewCredentials()
+	} else {
+		sysPool, err := x509.SystemCertPool()
+		if err != nil {
+			return nil, fmt.Errorf("failed to get system cert: %w", err)
+		}
+		// By default, skip TLS verify is false.
+		creds = credentials.NewTLS(&tls.Config{RootCAs: sysPool, InsecureSkipVerify: s.skipTLSVerify}) /* #nosec G402 */
+	}
+	return grpc.NewClient(s.otelEndpoint,
+		grpc.WithTransportCredentials(creds))
 }

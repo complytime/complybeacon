@@ -55,7 +55,7 @@ podman-compose up --build
 
 # Run proofwatch. This stand up one source type with is a simple push target with raw evidence
 make build
-./bin/proofwatch --config ./docs/watch.yaml
+./bin/proofwatch --config ./docs/watch.yaml --skip-tls
 
 # Test the pipeline
 curl -X POST http://localhost:8083/v1/push -H "Content-Type: application/json" -d @hack/sampledata/evidence.json

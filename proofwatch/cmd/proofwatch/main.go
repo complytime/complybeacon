@@ -30,12 +30,18 @@ func main() {
 }
 
 func run(ctx context.Context) error {
-	var otelEndpoint, configPath string
+	var (
+		otelEndpoint, configPath string
+		skipTLS, skipTLSVerify   bool
+	)
+
 	flag.StringVar(&otelEndpoint, "otel-endpoint", "localhost:4317", "Endpoint for the OpenTelemetry Collector")
 	flag.StringVar(&configPath, "config", "./watch.yaml", "Path to proofwatch configuration file")
+	flag.BoolVar(&skipTLS, "skip-tls", false, "Do not use TLS to communicate with the OpenTelemetry Collector")
+	flag.BoolVar(&skipTLSVerify, "skip-tls-verify", false, "Bypass server certificate validation")
 	flag.Parse()
 
-	agt := agent.New(otelEndpoint)
+	agt := agent.New(otelEndpoint, skipTLS, skipTLSVerify)
 
 	configPath = filepath.Clean(configPath)
 	configBytes, err := os.ReadFile(filepath.Clean(configPath))
