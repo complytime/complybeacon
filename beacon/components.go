@@ -17,6 +17,7 @@ import (
 	batchprocessor "go.opentelemetry.io/collector/processor/batchprocessor"
 	truthbeam "github.com/complytime/complybeacon/truthbeam"
 	transformprocessor "github.com/open-telemetry/opentelemetry-collector-contrib/processor/transformprocessor"
+	schemaprocessor "github.com/open-telemetry/opentelemetry-collector-contrib/processor/schemaprocessor"
 	otlpreceiver "go.opentelemetry.io/collector/receiver/otlpreceiver"
 	webhookeventreceiver "github.com/open-telemetry/opentelemetry-collector-contrib/receiver/webhookeventreceiver"
 	filelogreceiver "github.com/open-telemetry/opentelemetry-collector-contrib/receiver/filelogreceiver"
@@ -63,6 +64,7 @@ func components() (otelcol.Factories, error) {
 		batchprocessor.NewFactory(),
 		truthbeam.NewFactory(),
 		transformprocessor.NewFactory(),
+		schemaprocessor.NewFactory(),
 	)
 	if err != nil {
 		return otelcol.Factories{}, err
@@ -71,6 +73,7 @@ func components() (otelcol.Factories, error) {
 	factories.ProcessorModules[batchprocessor.NewFactory().Type()] = "go.opentelemetry.io/collector/processor/batchprocessor v0.131.0"
 	factories.ProcessorModules[truthbeam.NewFactory().Type()] = "github.com/complytime/complybeacon/truthbeam v0.1.0"
 	factories.ProcessorModules[transformprocessor.NewFactory().Type()] = "github.com/open-telemetry/opentelemetry-collector-contrib/processor/transformprocessor v0.134.0"
+	factories.ProcessorModules[schemaprocessor.NewFactory().Type()] = "github.com/open-telemetry/opentelemetry-collector-contrib/processor/schemaprocessor v0.134.0"
 
 	factories.Connectors, err = otelcol.MakeFactoryMap[connector.Factory](
 		signaltometricsconnector.NewFactory(),

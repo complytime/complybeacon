@@ -49,6 +49,11 @@ func ApplyAttributes(ctx context.Context, client *Client, serverURL string, _ pc
 	categoryId := int(categoryIDVal.Int())
 	classId := int(classIDVal.Int())
 
+	logData, err := json.Marshal(attrs.AsRaw())
+	if err != nil {
+		return fmt.Errorf("error marshalling raw log data: %w", err)
+	}
+
 	enrichReq := EnrichmentRequest{
 		Evidence: RawEvidence{
 			Id:         evidenceIDVal.Str(),
@@ -58,6 +63,7 @@ func ApplyAttributes(ctx context.Context, client *Client, serverURL string, _ pc
 			Source:     policySourceVal.Str(),
 			PolicyId:   policyIDVal.Str(),
 			Decision:   policyDecisionVal.Str(),
+			RawData:    logData,
 		},
 	}
 

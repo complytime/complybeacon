@@ -26,14 +26,15 @@ processors:
     log_statements:
       - context: log
         statements:
-          - merge_maps(log.cache, ParseJSON(body), "upsert") where IsMatch(log.body, "^\\{")
-          - set(log.attributes["evidence.id"], log.cache["metadata"]["uid"])
-          - set(log.attributes["policy.id"], log.cache["policy"]["uid"])
-          - set(log.attributes["policy.decision"], log.cache["status"])
-          - set(log.attributes["policy.source"], log.cache["metadata"]["product"]["name"])
-          - set(log.attributes["category.id"], log.cache["category_uid"])
-          - set(log.attributes["class.id"], log.cache["class_uid"])
-          - delete_matching_keys(log.cache, ".*")
+          - merge_maps(log.attributes, ParseJSON(body), "upsert") where IsMatch(log.body, "^\\{")
+          - set(log.attributes["evidence.id"], log.attributes["metadata"]["uid"])
+          - set(log.attributes["policy.id"], log.attributes["policy"]["uid"])
+          - set(log.attributes["policy.decision"], log.attributes["status"])
+          - set(log.attributes["policy.source"], log.attributes["metadata"]["product"]["name"])
+          - set(log.attributes["category.id"], log.attributes["category_uid"])
+          - set(log.attributes["class.id"], log.attributes["class_uid"])
+          - set(log.body, nil)
+          # TODO: This would need to schems processor for failures and different OCSF versions
   transform/time:
     log_statements:
       - context: log

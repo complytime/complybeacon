@@ -15,6 +15,7 @@ processors:
   - gomod: go.opentelemetry.io/collector/processor/batchprocessor v0.131.0
   - gomod: github.com/complytime/complybeacon/truthbeam v0.1.0
   - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/processor/transformprocessor v0.134.0
+  - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/processor/schemaprocessor v0.134.0
 
 receivers:
   - gomod: go.opentelemetry.io/collector/receiver/otlpreceiver v0.131.0

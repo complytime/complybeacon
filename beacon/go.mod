@@ -9,6 +9,7 @@ toolchain go1.24.6
 require (
 	github.com/complytime/complybeacon/truthbeam v0.1.0
 	github.com/open-telemetry/opentelemetry-collector-contrib/connector/signaltometricsconnector v0.134.0
+	github.com/open-telemetry/opentelemetry-collector-contrib/processor/schemaprocessor v0.134.0
 	github.com/open-telemetry/opentelemetry-collector-contrib/processor/transformprocessor v0.134.0
 	github.com/open-telemetry/opentelemetry-collector-contrib/receiver/filelogreceiver v0.134.0
 	github.com/open-telemetry/opentelemetry-collector-contrib/receiver/webhookeventreceiver v0.134.0
@@ -34,6 +35,7 @@ require (
 )
 
 require (
+	github.com/Masterminds/semver/v3 v3.3.1 // indirect
 	github.com/alecthomas/participle/v2 v2.1.4 // indirect
 	github.com/antchfx/xmlquery v1.4.4 // indirect
 	github.com/antchfx/xpath v1.3.5 // indirect
@@ -92,6 +94,7 @@ require (
 	github.com/open-telemetry/opentelemetry-collector-contrib/pkg/pdatautil v0.134.0 // indirect
 	github.com/open-telemetry/opentelemetry-collector-contrib/pkg/sampling v0.134.0 // indirect
 	github.com/open-telemetry/opentelemetry-collector-contrib/pkg/stanza v0.134.0 // indirect
+	github.com/patrickmn/go-cache v2.1.0+incompatible // indirect
 	github.com/pierrec/lz4/v4 v4.1.22 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/power-devops/perfstat v0.0.0-20210106213030-5aafc221ea8c // indirect
@@ -181,6 +184,7 @@ require (
 	go.opentelemetry.io/otel/exporters/stdout/stdouttrace v1.37.0 // indirect
 	go.opentelemetry.io/otel/log v0.13.0 // indirect
 	go.opentelemetry.io/otel/metric v1.37.0 // indirect
+	go.opentelemetry.io/otel/schema v0.0.12 // indirect
 	go.opentelemetry.io/otel/sdk v1.37.0 // indirect
 	go.opentelemetry.io/otel/sdk/log v0.13.0 // indirect
 	go.opentelemetry.io/otel/sdk/metric v1.37.0 // indirect
@@ -203,4 +207,4 @@ require (
 	sigs.k8s.io/yaml v1.5.0 // indirect
 )
 
-replace github.com/complytime/complybeacon/truthbeam => github.com/complytime/complybeacon/truthbeam v0.0.0-20250906214136-d9af1d28866d
+replace github.com/complytime/complybeacon/truthbeam => github.com/complytime/complybeacon/truthbeam v0.0.0-20250906220442-88c41889bd41
