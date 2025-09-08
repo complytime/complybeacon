@@ -43,23 +43,23 @@ The now-enriched log record is exported from the `collector` to a final destinat
 │   ┌────────────────────┐   ┌───────────────────┐   │                         │                              │
 │   │                    │   │                   │   ├─────────────────────────┤                              │
 │   │                    ├───┤    ProofWatch     ├───┼────┐                    │                              │
-│   │   Instrumented     │   │                   │   │    │                    │                              │
-│   │ direct to collector│   └───────────────────┘   │   ┌┴─────────────────┐  │                              │
-│   │    Policy Engine   │                           │   │                  │  │                              │
-│   │                    │                           │   │                  │  │                              │
+│   │                    │   │                   │   │    │                    │                              │
+│   │   Normalization    │   └───────────────────┘   │   ┌┴─────────────────┐  │                              │
+│   │   At the Edge      │                           │   │       OTLP       │  │                              │
+│   │                    │                           │   │       Filelog    │  │                              │
 │   │                    │                           │   │      Reciever    │  │                              │
-│   │                    │  ┌────OCSF────────────────┼───┤                  │  │                              │
+│   │                    │  ┌────────────────────────┼───┤                  │  │                              │
 │   └────────────────────┘  │                        │   └────────┬─────────┘  │                              │
 │                           │                        │            │            │               ┌─────────────┐│
 │                           │                        │   ┌────────┴─────────┐  │               │             ││
 │                           │                        │   │                  │  │               │             ││
-│                           │                        │   │    TruthBeam     │──┼──────────────►│ Compass API ││
-│   ┌───────────────────────┴───┐                    │   │    Processor     │  │               │             ││
-│   │                           │                    │   │                  │  │               │             ││
+│                           │                        │   │    Tranform      │──┼──────────────►│ Compass API ││
+│   ┌───────────────────────┴───┐                    │   │    TruthBeam     │  │               │             ││
+│   │                           │                    │   │    Processor     │  │               │             ││
 │   │                           │                    │   └────────┬─────────┘  │               └─────────────┘│
-│   │                           │                    │            │            │                              │
-│   │    Policy Engine with     │                    │            │            │                              │
-│   │      No Instrumentation   │                    │   ┌────────┴─────────┐  │                              │
+│   │      In-collector         │                    │            │            │                              │
+│   │     Normlalization        │                    │            │            │                              │
+│   │                           │                    │   ┌────────┴─────────┐  │                              │
 │   │                           │                    │   │    Exporter      │  │                              │
 │   │                           │                    │   │   (e.g. Loki     │  │                              │
 │   │                           │                    │   │   Splunk)        │  │                              │
@@ -84,7 +84,7 @@ ComplyBeacon is designed to be a flexible toolkit. Its components can be used in
 
 ### 1. ProofWatch
 
-**Purpose**: A helper library that acts as a log bridge for security events. Its purpose is to take policy decision data from an application and send it to an OpenTelemetry Collector as standardized logs.
+**Purpose**: A helper library that acts as a "log bridge" for security events. Its purpose is to take policy decision data from an application and send it to an OpenTelemetry Collector as standardized logs.
 
 **Key Responsibilities**:
 

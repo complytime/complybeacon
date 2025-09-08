@@ -34,7 +34,7 @@ processors:
           - set(log.attributes["category.id"], log.attributes["category_uid"])
           - set(log.attributes["class.id"], log.attributes["class_uid"])
           - set(log.body, nil)
-          # TODO: This would need to schems processor for failures and different OCSF versions
+          # TODO: This would need to schema processor for failures and different OCSF versions
   transform/time:
     log_statements:
       - context: log
@@ -49,6 +49,18 @@ exporters:
     endpoint: "http://loki:3100/otlp"
     tls:
       insecure: true
+  awss3/logs:
+    s3uploader:
+      region: 'us-east-1'
+      s3_bucket: 'otel-data-backup'
+  file/rotation_with_custom_settings:
+    path: ./data/logs-backup.zst
+    rotation:
+      max_megabytes: 10
+      max_days: 3
+      max_backups: 3
+      localtime: true
+    compression: zstd
 
 service:
   pipelines:
@@ -60,11 +72,11 @@ service:
       receivers: [ otlp ]
       processors: [ batch ]
       exporters: [ debug ]
-    logs/webhook_pipeline:
-      receivers: [ webhookevent ]
-      processors: [ transform/ocsf, transform/time, truthbeam ]
+    logs/analysis_pipeline:
+      receivers: [ webhookevent, otlp ]
+      processors: [ batch, transform/ocsf, transform/time, truthbeam ]
       exporters: [ debug, otlphttp/logs ]
-    logs/otlp_pipeline:
-      receivers: [otlp]
-      processors: [batch, transform/time, truthbeam]
-      exporters: [debug, otlphttp/logs]
+    logs/compliance_pipeline:
+      receivers: [ otlp, webhookevent ]
+      processors: [ batch, transform/ocsf, transform/time, truthbeam ]
+      exporters: [ debug, file/rotation_with_custom_settings ]

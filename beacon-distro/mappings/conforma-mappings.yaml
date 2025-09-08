@@ -1,0 +1,61 @@
+receivers:
+  webhookevent:
+    endpoint: 0.0.0.0:8089
+    read_timeout: "500ms"
+    path: "/eventsource/receiver"
+    health_path: "/eventreceiver/healthcheck"
+    split_logs_at_newline: false
+  otlp:
+    protocols:
+      grpc:
+        endpoint: 0.0.0.0:4319
+
+processors:
+  # Mapping for conforma logs to OCSF
+  transform/conforma:
+    error_mode: ignore
+    log_statements:
+      - context: log
+        statements:
+        - merge_maps(log.cache, ParseJSON(body), "upsert") where IsMatch(log.body, "^\\{")
+        - set(attributes["class_uid"], 6007)
+        - set(attributes["category_uid"], 6)
+        - set(attributes["category_name"], "Application Activity")
+        - set(attributes["class_name"], "Scan Activity")
+        - set(attributes["type_uid"], 60070)
+        - set(attributes["action"], "observed")
+        - set(attributes["action_id"], 3)
+        - set(attributes["status"], "success") where log.cache["success"] == true
+        - set(attributes["status_id"], 1) where log.cache["success"] == true
+        - set(attributes["status"], "failure") where log.cache["success"] == false
+        - set(attributes["status_id"], 2) where log.cache["success"] == false
+        - set(attributes["metadata.uid"], UUIDv7())
+        - set(attributes["metadata.product.name"], "conforma")
+        - set(attributes["metadata.product.vendor_name"], "conforma")
+        - set(attributes["metadata.product.version"], log.cache["ec-version"])
+        - set(attributes["metadata.log_provider"], "conforma")
+        - set(attributes["time"], log.cache["effective-time"])
+        - set(attributes["policy.name"], log.cache["policy"]["name"])
+        - set(log.cache, nil)
+exporters:
+  debug:
+    verbosity: detailed
+  otlp:
+    endpoint: 0.0.0.0:4317
+    tls:
+      insecure: true
+
+service:
+  pipelines:
+    traces:
+      receivers: [ otlp ]
+      processors: []
+      exporters: [ otlp ]
+    metrics:
+      receivers: [ otlp ]
+      processors: []
+      exporters: [ otlp ]
+    logs:
+      receivers: [ webhookevent ]
+      processors: [ transform/conforma ]
+      exporters: [ debug, otlp ]

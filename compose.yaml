@@ -49,12 +49,11 @@ services:
 
   collector:
     build:
-      context: .
-      dockerfile: ./images/Containerfile.collector
+      context: ./beacon-distro
+      dockerfile: Containerfile.collector
     restart: unless-stopped
-    command: ["--config=/etc/otel-collector.yaml"]
     volumes:
-      - ./collector-config.yaml:/etc/otel-collector.yaml
+      - ./data:/data:Z
     ports:
       - "4317:4317"
       - "8088:8088"
