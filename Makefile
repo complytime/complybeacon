@@ -17,7 +17,7 @@
 # Define a list of your Go modules.
 # Add or remove modules here as your project evolves.
 # The path should be relative to the Makefile's location.
-MODULES := ./compass ./proofwatch
+MODULES := ./compass ./proofwatch ./truthbeam
 BUILD := ./compass
 
 # The directory where the compiled binaries will be placed.
@@ -65,7 +65,7 @@ clean: ## Removes all generated binaries and Go build caches.
 .PHONY: clean
 
 workspace: # Setup a go workspace with all modules
-		@go work init && go work use $(MODULES) "truthbeam" "beacon"
+		@go work init && go work use $(MODULES)
 .PHONY: workspace
 
 #------------------------------------------------------------------------------
