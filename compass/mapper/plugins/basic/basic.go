@@ -1,6 +1,7 @@
 package basic
 
 import (
+	"github.com/ossf/gemara/layer2"
 	"github.com/ossf/gemara/layer4"
 
 	"github.com/complytime/complybeacon/compass/api"
@@ -60,30 +61,48 @@ func (m *Mapper) Map(evidence api.RawEvidence, scope mapper.Scope) ([]api.Compli
 	}
 
 	for catalogId, plans := range m.plans {
-		_, ok := scope[catalogId]
+		catalog, ok := scope[catalogId]
 		if !ok {
 			// evaluation is not in scope
 			continue
-
 		}
 
-		var impactedRequirements []string
-		// Find the Assessment Method in the plan
+		mappingsByControl := map[string][]layer2.Mapping{}
+		for _, family := range catalog.ControlFamilies {
+			for _, control := range family.Controls {
+				mappingsByControl[control.Id] = control.GuidelineMappings
+			}
+		}
+
+		var control string
+		var requirements []string
+		var standards []string
 		for _, plan := range plans {
 			for _, requirement := range plan.Assessments {
 				for _, procedure := range requirement.Procedures {
 					if procedure.Id == evidence.PolicyId {
-						impactedRequirements = append(impactedRequirements, requirement.RequirementId)
+						control = requirement.RequirementId
+
+						mappings := mappingsByControl[plan.ControlId]
+						for _, mapping := range mappings {
+							standards = append(standards, mapping.ReferenceId)
+							for _, entry := range mapping.Entries {
+								requirements = append(requirements, entry.ReferenceId)
+							}
+						}
+
 						break
 					}
 				}
 			}
 		}
 
-		if len(impactedRequirements) > 0 {
+		if control != "" {
 			baseline := api.Compliance{
 				Benchmark:    catalogId,
-				Requirements: impactedRequirements,
+				Control:      control,
+				Requirements: requirements,
+				Standards:    standards,
 			}
 			compliance = append(compliance, baseline)
 		}

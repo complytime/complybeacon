@@ -72,16 +72,24 @@ func ApplyAttributes(ctx context.Context, client *Client, serverURL string, _ pc
 		return err
 	}
 
-	attrs.PutStr("compliance.result", string(enrichRes.Status.Title))
+	attrs.PutStr("compliance.status", string(enrichRes.Status.Title))
 	baselines := attrs.PutEmptySlice("compliance.baselines")
 	requirements := attrs.PutEmptySlice("compliance.requirements")
+	standards := attrs.PutEmptySlice("compliance.standards")
+	controls := attrs.PutEmptySlice("compliance.controls")
 
 	for _, impacted := range enrichRes.Compliance {
-		newVal := baselines.AppendEmpty()
-		newVal.SetStr(impacted.Benchmark)
+		newBench := baselines.AppendEmpty()
+		newBench.SetStr(impacted.Benchmark)
+		newControl := controls.AppendEmpty()
+		newControl.SetStr(impacted.Control)
 		for _, req := range impacted.Requirements {
 			newReq := requirements.AppendEmpty()
 			newReq.SetStr(req)
+		}
+		for _, std := range impacted.Standards {
+			newStd := standards.AppendEmpty()
+			newStd.SetStr(std)
 		}
 	}
 

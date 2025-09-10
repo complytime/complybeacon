@@ -49,8 +49,6 @@ type PluginConfig struct {
 	EvaluationsDir string `json:"evaluations-dir"`
 }
 
-// TODO: This need to be easier to fallback to more generic processing
-
 func NewMapperSet(config *Config) (mapper.Set, error) {
 	pluginSet := make(mapper.Set)
 	for _, pluginConf := range config.Plugins {
@@ -82,7 +80,7 @@ func NewMapperSet(config *Config) (mapper.Set, error) {
 }
 
 func NewMapperFromDir(pluginID mapper.ID, evaluationsPath string) (mapper.Mapper, error) {
-	tfmr := factory.MapperByID(pluginID)
+	mpr := factory.MapperByID(pluginID)
 	err := filepath.Walk(evaluationsPath, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			return err
@@ -106,9 +104,9 @@ func NewMapperFromDir(pluginID mapper.ID, evaluationsPath string) (mapper.Mapper
 		extension := filepath.Ext(info.Name())
 		nameWithoutExt := strings.TrimSuffix(info.Name(), extension)
 
-		// FIXME: Increase robustness here
-		tfmr.AddEvaluationPlan(nameWithoutExt, evaluation)
+		// FIXME: Increase robustness here instead of relying on the filename.
+		mpr.AddEvaluationPlan(nameWithoutExt, evaluation)
 		return nil
 	})
-	return tfmr, err
+	return mpr, err
 }

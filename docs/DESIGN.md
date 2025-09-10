@@ -96,6 +96,27 @@ ComplyBeacon is designed to be a flexible toolkit. Its components can be used in
 
 `proofwatch` attributes and body are defined [here](./ATTRIBUTES.md)
 
+_Example code snippet_
+```go
+watcher, err := proofwatch.NewProofWatch("myexample", meter)
+if err != nil {
+    return fmt.Errorf("error setting up watcher: %w", err)
+}
+
+logger.Debug("found evidence", "path", evidence.Href)
+var e proofwatch.Evidence
+evidenceData, err := os.ReadFile(evidence.Href)
+if err != nil {
+    return err
+}
+if err = json.Unmarshal(evidenceData, &e); err != nil {
+    return err
+}
+if err = watcher.Log(ctx, e); err != nil {
+    return err
+}
+```
+
 ### 2. Beacon Collector Distro
 
 **Purpose**: A minimal OpenTelemetry Collector distribution that acts as the runtime environment for the `complybeacon` evidence pipeline, specifically by hosting the `truthbeam` processor.

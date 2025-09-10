@@ -38,11 +38,11 @@ services:
   compass:
     build:
       context: .
-      dockerfile: ./images/Containerfile.compass
+      dockerfile: ./compass/images/Containerfile.compass
     restart: unless-stopped
     volumes:
       - ./hack/sampledata:/sampledata
-      - ./docs/config.yaml:/config.yaml
+      - ./docs/demo/config.yaml:/config.yaml
     command: ["--config", "/config.yaml", "--catalog", "/sampledata/osps.yaml",  "--port", "8081", "--skip-tls"]
     ports:
       - "8081:8081"
@@ -52,10 +52,26 @@ services:
       context: ./beacon-distro
       dockerfile: Containerfile.collector
     restart: unless-stopped
+    command: ["--config=/etc/otel-collector.yaml"]
     volumes:
+      - ./docs/demo/demo-config.yaml:/etc/otel-collector.yaml
       - ./data:/data:Z
     ports:
       - "4317:4317"
       - "8088:8088"
+    depends_on:
+      - compass
+
+  collector-agent:
+    build:
+      context: ./beacon-distro
+      dockerfile: Containerfile.collector
+    restart: unless-stopped
+    command: [ "--config=/etc/otel-collector.yaml" ]
+    volumes:
+      - ./docs/demo/demo-agent-config.yaml:/etc/otel-collector.yaml
+    ports:
+      - "4319:4319"
+      - "8089:8089"
     depends_on:
       - compass

@@ -1,2 +1,1 @@
-This directory contains mappings for transformation with of logs
-to OCSF via OTTL
+This directory contains mappings for transformation with of policy logs to OCSF via OTTL

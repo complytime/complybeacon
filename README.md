@@ -11,7 +11,10 @@ By bridging the gap between raw policy scanner output and modern logging pipelin
 ComplyBeacon is policy-driven observability toolkit consisting of four components:
 
 ### ProofWatch
-This library acts as a log bridge between logs 
+This library support data normalization at the edge.
+It takes output from policy scanners and transforms it into a structured OpenTelemetry log record with an OCSF-compliant log body.
+ProofWatch adds custom attributes to this log record to represent the evidence in a way that is meaningful to the downstream components.
+For an in-collector normalization strategy, collector config mappings using the `transform` processor are available under `beacon-distro`.
 
 > Attributes are defined [here](./docs/ATTRIBUTES.md)
 
@@ -33,9 +36,9 @@ Based on the policy IDs and other details provided by the TruthBeam, Compass add
 
 #### Support Compass Mappers
 
-| Mapper  | Description                          |
-|---------|--------------------------------------|
-| `basic` | Maps to `gemara` based on attributes |
+| Mapper  | Description                              |
+|---------|------------------------------------------|
+| `basic` | Maps to `gemara` based on log attributes |
 
 # Quick Start
 

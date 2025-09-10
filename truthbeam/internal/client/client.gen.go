@@ -38,11 +38,14 @@ type Compliance struct {
 	// Benchmark Benchmark or Security Control Catalog id
 	Benchmark string `json:"benchmark"`
 
+	// Control The Security Control being evaluated
+	Control string `json:"control"`
+
 	// Requirements Assessment requirements Id
 	Requirements []string `json:"requirements"`
 
 	// Standards List of impacted compliance standards
-	Standards *[]string `json:"standards,omitempty"`
+	Standards []string `json:"standards"`
 }
 
 // EnrichmentRequest defines model for EnrichmentRequest.
@@ -53,6 +56,9 @@ type EnrichmentRequest struct {
 // EnrichmentResponse Enriched compliance finding with risk attributes and threat mappings.
 type EnrichmentResponse struct {
 	Compliance []Compliance `json:"compliance"`
+
+	// Remediation Optional remediation information
+	Remediation *string `json:"remediation,omitempty"`
 
 	// Status Compliance Result
 	Status  Status           `json:"status"`

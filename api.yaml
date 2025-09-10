@@ -99,6 +99,9 @@ components:
             $ref: '#/components/schemas/Compliance'
         status:
           $ref: '#/components/schemas/Status'
+        remediation:
+          type: string
+          description: "Optional remediation information"
       required:
         - compliance
         - status
@@ -130,6 +133,7 @@ components:
       required:
         - title
 
+# Inspired by: https://schema.ocsf.io/1.5.0/objects/compliance
     Compliance:
       type: object
       title: "Compliance"
@@ -138,6 +142,9 @@ components:
         benchmark:
           type: string
           description: "Benchmark or Security Control Catalog id"
+        control:
+          type: string
+          description: "The Security Control being evaluated"
         requirements:
           type: array
           items:
@@ -150,8 +157,10 @@ components:
           description: "List of impacted compliance standards"
       additionalProperties: false
       required:
-        - requirements
+        - control
         - benchmark
+        - standards
+        - requirements
 
     ThreatMapping:
       type: object

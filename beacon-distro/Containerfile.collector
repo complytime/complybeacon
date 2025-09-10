@@ -22,4 +22,4 @@ COPY --chmod=755 --from=build-stage /build/beacon/otelcol-beacon /otelcol-beacon
 ENTRYPOINT ["/otelcol-beacon"]
 CMD ["--config", "/etc/otelcol-beacon/config.yaml"]
 
-EXPOSE 4317 4318 12001 8088
+EXPOSE 4317 4318 12001

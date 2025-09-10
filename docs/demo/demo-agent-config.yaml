@@ -2,11 +2,16 @@
 # See https://github.com/open-telemetry/opentelemetry-collector/blob/main/docs/security-best-practices.md#safeguards-against-denial-of-service-attacks
 
 receivers:
+  webhookevent:
+    endpoint: 0.0.0.0:8089
+    read_timeout: "500ms"
+    path: "/eventsource/receiver"
+    health_path: "/eventreceiver/healthcheck"
+    split_logs_at_newline: false
   otlp:
     protocols:
       grpc:
-        endpoint: 0.0.0.0:4317
-
+        endpoint: 0.0.0.0:4319
 processors:
   batch:
   transform/conforma:
@@ -50,6 +55,10 @@ processors:
 exporters:
   debug:
     verbosity: detailed
+  otlp:
+    endpoint: "collector:4317"
+    tls:
+      insecure: true
 
 service:
   pipelines:
@@ -62,6 +71,6 @@ service:
       processors: [ batch ]
       exporters: [ otlp ]
     logs:
-      receivers: [ otlp ]
+      receivers: [ webhookevent ]
       processors: [ batch, transform/conforma ]
-      exporters: [ debug ]
+      exporters: [ debug, otlp ]

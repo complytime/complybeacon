@@ -2,7 +2,7 @@ package proofwatch
 
 import ocsf "github.com/Santiago-Labs/go-ocsf/ocsf/v1_5_0"
 
-// OCSF-based evidence structured, with some security control profile fields. More are added
+// OCSF-based evidence structured, with some security control profile fields. Attributes for `compliance` findings
 // by the `compass` service based on `gemara` based during pipeline enrichment.
 
 type Evidence struct {

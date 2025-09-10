@@ -14,10 +14,15 @@ This defines a set of attributes used for raw evidence metadata and risk context
 | `class.id`        | `integer` | A unique identifier for the event's class, providing a more granular event type.                        |
 
 
-## Risk Context
+## Compliance Context
 
-| Attribute Name            | Type       | Description                                                       |
-|:--------------------------|:-----------|:------------------------------------------------------------------|
-| `compliance.result`       | `string`   | The overall compliance result from the enrichment API.            |
-| `compliance.baselines`    | `string[]` | An array of identifiers for the impacted compliance baselines.    |
-| `compliance.requirements` | `string[]` | An array of identifiers for the impacted compliance requirements. |
+From https://schema.ocsf.io/1.5.0/objects/compliance
+
+| Attribute Name            | Type       | Description                                                                                   |
+|:--------------------------|:-----------|:----------------------------------------------------------------------------------------------|
+| `compliance.status`       | `string`   | The normalized status identifier of the compliance check                                      |
+| `compliance.control`      | `string`   | A Control is a prescriptive, actionable set of specifications that strengthens device posture |
+| `compliance.benchmarks`   | `string`   | A security catalog identifier                                                                 |
+| `compliance.requirements` | `string[]` | The specific compliance requirements being evaluated                                          |
+| `compliance.standards`    | `string[]` | The regulatory or industry standards being evaluated for compliance.                          |
+
