@@ -4,6 +4,8 @@ services:
     image: "docker.io/grafana/loki:3.5.1"
     ports:
       - "3100:3100"
+    volumes:
+      - ./loki-config.yaml:/etc/loki/local-config.yaml
     command: -config.file=/etc/loki/local-config.yaml
 
   grafana:

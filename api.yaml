@@ -94,14 +94,9 @@ components:
           items:
             $ref: '#/components/schemas/ThreatMapping'
         compliance:
-          type: array
-          items:
-            $ref: '#/components/schemas/Compliance'
+          $ref: '#/components/schemas/Compliance'
         status:
           $ref: '#/components/schemas/Status'
-        remediation:
-          type: string
-          description: "Optional remediation information"
       required:
         - compliance
         - status
@@ -145,6 +140,9 @@ components:
         control:
           type: string
           description: "The Security Control being evaluated"
+        category:
+          type: string
+          description: "The category a control framework pertains"
         requirements:
           type: array
           items:
@@ -155,12 +153,16 @@ components:
           items:
             type: string
           description: "List of impacted compliance standards"
+        remediation:
+          type: string
+          description: "Optional remediation information"
       additionalProperties: false
       required:
         - control
         - benchmark
         - standards
         - requirements
+        - category
 
     ThreatMapping:
       type: object

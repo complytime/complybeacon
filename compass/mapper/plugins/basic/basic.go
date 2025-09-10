@@ -39,10 +39,7 @@ func (m *Mapper) PluginName() mapper.ID {
 	return ID
 }
 
-func (m *Mapper) Map(evidence api.RawEvidence, scope mapper.Scope) ([]api.Compliance, api.Status) {
-	var compliance []api.Compliance
-
-	// Make a reasonable attempt to determine result here
+func (m *Mapper) Map(evidence api.RawEvidence, scope mapper.Scope) (api.Compliance, api.Status) {
 	var (
 		status   api.StatusTitle
 		statusId api.StatusId
@@ -63,50 +60,72 @@ func (m *Mapper) Map(evidence api.RawEvidence, scope mapper.Scope) ([]api.Compli
 	for catalogId, plans := range m.plans {
 		catalog, ok := scope[catalogId]
 		if !ok {
-			// evaluation is not in scope
 			continue
 		}
 
-		mappingsByControl := map[string][]layer2.Mapping{}
-		for _, family := range catalog.ControlFamilies {
-			for _, control := range family.Controls {
-				mappingsByControl[control.Id] = control.GuidelineMappings
-			}
-		}
+		proceduresById := make(map[string]struct {
+			ControlID     string
+			RequirementID string
+			Documentation string
+		})
 
-		var control string
-		var requirements []string
-		var standards []string
 		for _, plan := range plans {
 			for _, requirement := range plan.Assessments {
 				for _, procedure := range requirement.Procedures {
-					if procedure.Id == evidence.PolicyId {
-						control = requirement.RequirementId
-
-						mappings := mappingsByControl[plan.ControlId]
-						for _, mapping := range mappings {
-							standards = append(standards, mapping.ReferenceId)
-							for _, entry := range mapping.Entries {
-								requirements = append(requirements, entry.ReferenceId)
-							}
-						}
-
-						break
+					proceduresById[procedure.Id] = struct {
+						ControlID     string
+						RequirementID string
+						Documentation string
+					}{
+						ControlID:     plan.ControlId,
+						RequirementID: requirement.RequirementId,
+						Documentation: procedure.Documentation,
 					}
 				}
 			}
 		}
 
-		if control != "" {
-			baseline := api.Compliance{
-				Benchmark:    catalogId,
-				Control:      control,
-				Requirements: requirements,
-				Standards:    standards,
+		controlData := make(map[string]struct {
+			Mappings []layer2.Mapping
+			Category string
+		})
+
+		for _, family := range catalog.ControlFamilies {
+			for _, control := range family.Controls {
+				controlData[control.Id] = struct {
+					Mappings []layer2.Mapping
+					Category string
+				}{
+					Mappings: control.GuidelineMappings,
+					Category: family.Id,
+				}
 			}
-			compliance = append(compliance, baseline)
+		}
+
+		if procedureInfo, ok := proceduresById[evidence.PolicyId]; ok {
+
+			if ctrlData, ok := controlData[procedureInfo.ControlID]; ok {
+
+				var requirements, standards []string
+				for _, mapping := range ctrlData.Mappings {
+					standards = append(standards, mapping.ReferenceId)
+					for _, entry := range mapping.Entries {
+						requirements = append(requirements, entry.ReferenceId)
+					}
+				}
+
+				compliance := api.Compliance{
+					Benchmark:    catalogId,
+					Control:      procedureInfo.RequirementID,
+					Requirements: requirements,
+					Standards:    standards,
+					Category:     ctrlData.Category,
+					Remediation:  &procedureInfo.Documentation,
+				}
+				return compliance, api.Status{Title: status, Id: &statusId}
+			}
 		}
 	}
 
-	return compliance, api.Status{Title: status, Id: &statusId}
+	return api.Compliance{}, api.Status{Title: status, Id: &statusId}
 }

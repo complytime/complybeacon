@@ -38,8 +38,14 @@ type Compliance struct {
 	// Benchmark Benchmark or Security Control Catalog id
 	Benchmark string `json:"benchmark"`
 
+	// Category The category a control framework pertains
+	Category string `json:"category"`
+
 	// Control The Security Control being evaluated
 	Control string `json:"control"`
+
+	// Remediation Optional remediation information
+	Remediation *string `json:"remediation,omitempty"`
 
 	// Requirements Assessment requirements Id
 	Requirements []string `json:"requirements"`
@@ -55,10 +61,8 @@ type EnrichmentRequest struct {
 
 // EnrichmentResponse Enriched compliance finding with risk attributes and threat mappings.
 type EnrichmentResponse struct {
-	Compliance []Compliance `json:"compliance"`
-
-	// Remediation Optional remediation information
-	Remediation *string `json:"remediation,omitempty"`
+	// Compliance Compliance details from OCSF Security Control Profile.
+	Compliance Compliance `json:"compliance"`
 
 	// Status Compliance Result
 	Status  Status           `json:"status"`

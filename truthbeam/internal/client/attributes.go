@@ -73,24 +73,23 @@ func ApplyAttributes(ctx context.Context, client *Client, serverURL string, _ pc
 	}
 
 	attrs.PutStr("compliance.status", string(enrichRes.Status.Title))
-	baselines := attrs.PutEmptySlice("compliance.baselines")
+	attrs.PutStr("compliance.control", enrichRes.Compliance.Control)
+	attrs.PutStr("compliance.benchmark", enrichRes.Compliance.Benchmark)
+	attrs.PutStr("compliance.category", enrichRes.Compliance.Category)
 	requirements := attrs.PutEmptySlice("compliance.requirements")
 	standards := attrs.PutEmptySlice("compliance.standards")
-	controls := attrs.PutEmptySlice("compliance.controls")
 
-	for _, impacted := range enrichRes.Compliance {
-		newBench := baselines.AppendEmpty()
-		newBench.SetStr(impacted.Benchmark)
-		newControl := controls.AppendEmpty()
-		newControl.SetStr(impacted.Control)
-		for _, req := range impacted.Requirements {
-			newReq := requirements.AppendEmpty()
-			newReq.SetStr(req)
-		}
-		for _, std := range impacted.Standards {
-			newStd := standards.AppendEmpty()
-			newStd.SetStr(std)
-		}
+	if enrichRes.Compliance.Remediation != nil {
+		attrs.PutStr("remediation.desc", *enrichRes.Compliance.Remediation)
+	}
+
+	for _, req := range enrichRes.Compliance.Requirements {
+		newReq := requirements.AppendEmpty()
+		newReq.SetStr(req)
+	}
+	for _, std := range enrichRes.Compliance.Standards {
+		newStd := standards.AppendEmpty()
+		newStd.SetStr(std)
 	}
 
 	return nil
