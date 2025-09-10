@@ -97,7 +97,7 @@ func (m *Mapper) Map(evidence api.RawEvidence, scope mapper.Scope) (api.Complian
 					Category string
 				}{
 					Mappings: control.GuidelineMappings,
-					Category: family.Id,
+					Category: family.Title,
 				}
 			}
 		}

@@ -46,28 +46,28 @@ control-families:
           branch.
         guideline-mappings:
           - reference-id: BPB
-            identifiers:
-              - B-G-3
+            "entries":
+            - "reference-id": B-G-3
           - reference-id: Scorecard
-            identifiers:
-              - Code-Review
+            entries:
+            - "reference-id": Code-Review
           - reference-id: PSSCRM
-            identifiers:
-              - G2.4
-              - P3.3
-              - P3.5
+            entries:
+            - "reference-id": G2.4
+            - "reference-id": P3.3
+            - "reference-id": P3.5
           - reference-id: PCIDSS
-            identifiers:
-              - 6.2.3.1
-              - 6.4.2
-              - 6.5.4
+            entries:
+            - "reference-id": 6.2.3.1
+            - "reference-id": 6.4.2
+            - "reference-id": 6.5.4
           - reference-id: 800-161
-            identifiers:
-              - AC-5
-              - AU-6
-              - PL-8
-              - SA-15
-              - SR-3
+            entries:
+            - "reference-id": AC-5
+            - "reference-id": AU-6
+            - "reference-id": PL-8
+            - "reference-id": SA-15
+            - "reference-id": SR-3
         assessment-requirements:
           - id: OSPS-QA-07.01
             text: |
