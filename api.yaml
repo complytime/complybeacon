@@ -83,7 +83,6 @@ components:
         - source
         - policyId
         - decision
-        - rawData
 
     EnrichmentResponse:
       type: object

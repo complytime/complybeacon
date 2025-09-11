@@ -96,7 +96,7 @@ type RawEvidence struct {
 	PolicyId string `json:"policyId"`
 
 	// RawData Raw JSON output from the policy engine.
-	RawData json.RawMessage `json:"rawData"`
+	RawData json.RawMessage `json:"rawData,omitempty"`
 
 	// Source The source of the raw evidence (e.g., policy engine name).
 	Source string `json:"source"`
