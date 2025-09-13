@@ -5,7 +5,7 @@ services:
     ports:
       - "3100:3100"
     volumes:
-      - ./loki-config.yaml:/etc/loki/local-config.yaml
+      - ./hack/demo/loki-config.yaml:/etc/loki/local-config.yaml
     command: -config.file=/etc/loki/local-config.yaml
 
   grafana:
@@ -44,7 +44,7 @@ services:
     restart: unless-stopped
     volumes:
       - ./hack/sampledata:/sampledata
-      - ./docs/demo/config.yaml:/config.yaml
+      - ./hack/demo/config.yaml:/config.yaml
     command: ["--config", "/config.yaml", "--catalog", "/sampledata/osps.yaml",  "--port", "8081", "--skip-tls"]
     ports:
       - "8081:8081"
@@ -56,7 +56,7 @@ services:
     restart: unless-stopped
     command: ["--config=/etc/otel-collector.yaml"]
     volumes:
-      - ./docs/demo/demo-config.yaml:/etc/otel-collector.yaml
+      - ./hack/demo/demo-config.yaml:/etc/otel-collector.yaml
       - ./data:/data:Z
     ports:
       - "4317:4317"
@@ -71,7 +71,7 @@ services:
     restart: unless-stopped
     command: [ "--config=/etc/otel-collector.yaml" ]
     volumes:
-      - ./docs/demo/demo-agent-config.yaml:/etc/otel-collector.yaml
+      - ./hack/demo/demo-agent-config.yaml:/etc/otel-collector.yaml
     ports:
       - "4319:4319"
       - "8089:8089"
