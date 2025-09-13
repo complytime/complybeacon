@@ -19,82 +19,71 @@
 
 ### Data Flow
 
-The ComplyBeacon architecture is designed to handle two primary data ingestion scenarios, each feeding into a unified enrichment pipeline.
+### Data Flow
 
-#### The Collector Pipeline
-For log sources, ProofWatch can be used to send OCSF-compliant logs directly to the collector. ProofWatch validates the raw evidence against a standardized OCSF schema, and 
-converts it into a structured LogRecord. This ensures the required attributes are present while retaining the original data within the log body.
+The ComplyBeacon architecture is centered around a unified enrichment pipeline that processes and enriches compliance evidence. The primary data flow begins with a source that generates OpenTelemetry-compliant logs.
 
-Once a LogRecord is ingested into the `collector` via a configured receiver, it proceeds through the following pipeline:
+1.  **Log Ingestion**: A source generates OCSF-compliant evidence and sends it as a structured log record to the `Beacon` collector, typically using `ProofWatch` to handle the emission. This can also be done by an OpenTelemetry collector agent.
+2.  **Enrichment Request**: The log record is received by the `Beacon` collector and forwarded to the `truthbeam` processor. `truthbeam` extracts key attributes from the record and sends an enrichment request to the `Compass` API.
+3.  **Enrichment Lookup**: The `Compass` service performs a lookup based on the provided attributes and returns a response containing compliance-related context (e.g., impacted baselines, requirements, and a compliance result).
+4.  **Attribute Injection**: `truthbeam` adds these new attributes from `Compass` to the original log record.
+5.  **Export**: The now-enriched log record is exported from the `Beacon` collector to a final destination (e.g., a SIEM, logging backend, or data lake) for analysis and correlation.
 
-1. The LogRecord is received and forwarded to the `truthbeam` processor.
-2. The `truthbeam` processor extracts key attributes (e.g., `policy.id`) from the log record.
-3. It then sends an enrichment request containing this data to the `compass` API.
-4. The `compass` service performs a lookup based on the provided attributes and returns a response with compliance-related context (e.g., impacted baselines, requirements, and a compliance result).
-5. `truthbeam` adds these new attributes to the original LogRecord.
-
-The now-enriched log record is exported from the `collector` to a final destination (e.g., a SIEM, logging backend, or data lake) for analysis and correlation.
 ```
-┌─────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
-│                                                                                                             │
-│                                                    ┌─────────────────────────┐                              │
-│                                                    │                         │                              │
-│                                                    │ Beacon Collector Distro │                              │
-│   ┌────────────────────┐   ┌───────────────────┐   │                         │                              │
-│   │                    │   │                   │   ├─────────────────────────┤                              │
-│   │                    ├───┤    ProofWatch     ├───┼────┐                    │                              │
-│   │                    │   │                   │   │    │                    │                              │
-│   │   Normalization    │   └───────────────────┘   │   ┌┴─────────────────┐  │                              │
-│   │   At the Edge      │                           │   │       OTLP       │  │                              │
-│   │                    │                           │   │       Filelog    │  │                              │
-│   │                    │                           │   │      Reciever    │  │                              │
-│   │                    │  ┌────────────────────────┼───┤                  │  │                              │
-│   └────────────────────┘  │                        │   └────────┬─────────┘  │                              │
-│                           │                        │            │            │               ┌─────────────┐│
-│                           │                        │   ┌────────┴─────────┐  │               │             ││
-│                           │                        │   │                  │  │               │             ││
-│                           │                        │   │    Tranform      │──┼──────────────►│ Compass API ││
-│   ┌───────────────────────┴───┐                    │   │    TruthBeam     │  │               │             ││
-│   │                           │                    │   │    Processor     │  │               │             ││
-│   │                           │                    │   └────────┬─────────┘  │               └─────────────┘│
-│   │      In-collector         │                    │            │            │                              │
-│   │     Normlalization        │                    │            │            │                              │
-│   │                           │                    │   ┌────────┴─────────┐  │                              │
-│   │                           │                    │   │    Exporter      │  │                              │
-│   │                           │                    │   │   (e.g. Loki     │  │                              │
-│   │                           │                    │   │   Splunk)        │  │                              │
-│   │                           │                    │   └──────────────────┘  │                              │
-│   │                           │                    └─────────────────────────┘                              │
-│   └───────────────────────────┘                                                                             │
-│                                                                                                             │
-└─────────────────────────────────────────────────────────────────────────────────────────────────────────────┘          
+┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
+│                                                                                                                   │
+│                                                                                                                   │
+│                                                    ┌─────────────────────────┐                                    │
+│                                                    │                         │                                    │
+│                                                    │ Beacon Collector Distro │                                    │
+│   ┌────────────────────┐   ┌───────────────────┐   │                         │                                    │
+│   │                    │   │                   │   ├─────────────────────────┤                                    │
+│   │                    ├───┤    ProofWatch     ├───┼────┐                    │                                    │
+│   │                    │   │                   │   │    │                    │                                    │
+│   │    Policy Log      │   └───────────────────┘   │   ┌┴─────────────────┐  │                                    │
+│   │    Source App      │                           │   │                  │  │                                    │
+│   │                    │                           │   │      OTLP        │  │                                    │
+│   │                    │                           │   │      Reciever    │  │                                    │
+│   │                    │  ┌────────────────────────┼───┤                  │  │                                    │
+│   └────────────────────┘  │                        │   └────────┬─────────┘  │               ┌─────────────┐      │
+│                           │                        │            │            │               │             │      │
+│                           │                        │   ┌────────┴─────────┐  │               │             │      │
+│                           │                        │   │                  │  │               │ Compass API │      │
+│                           │                        │   │    TruthBeam     │──┼──────────────►│             │      │
+│   ┌───────────────────────┴───┐                    │   │    Processor     │  │               │             │      │
+│   │                           │                    │   │                  │  │               └─────────────┘      │
+│   │                           │                    │   └────────┬─────────┘  │                                    │
+│   │      OpenTelemetry        │                    │            │            │                                    │
+│   │      Collector Agent      │                    │   ┌────────┴─────────┐  │                                    │
+│   │                           │                    │   │    Exporter      │  │                                    │
+│   │                           │                    │   │   (e.g. Loki     │  │                                    │
+│   │                           │                    │   │   Splunk)        │  │                                    │
+│   │                           │                    │   └──────────────────┘  │                                    │
+│   │                           │                    └─────────────────────────┘                                    │
+│   └───────────────────────────┘                                                                                   │
+│                                                                                                                   │
+└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
 ```
 
 ### Deployment Patterns
 
 ComplyBeacon is designed to be a flexible toolkit. Its components can be used in different combinations to fit a variety of operational needs.
 
-* Full Pipeline: This is the most common use case for all sources. Policy Engine (w/ ProofWatch) -> Collector -> Compass -> Final Destination
-
-* Include TruthBeam in an existing Collector Distro: If you already have a Collector distribution, simply add truthbeam to your distribution manifest.
-
-* Using Compass as a Standalone Service: The compass service can be deployed as an independent API, allowing it to be called by any application or a different enrichment processor within an existing OpenTelemetry or custom logging pipeline.
+* **Full Pipeline**: The most common use case where `ProofWatch` emits events to the `Beacon` collector, which in turn uses `TruthBeam` and `Compass` to enrich and export logs to a final destination.
+* **Integrating `TruthBeam`**: `TruthBeam` can be included in an existing OpenTelemetry Collector distribution, allowing you to add enrichment capabilities to your current observability pipeline.
+* **Standalone `Compass`**: The `Compass` service can be deployed as an independent API, enabling it to be called by any application or a different enrichment processor within an existing OpenTelemetry or custom logging pipeline.
 
 ## Component Analysis
 
 ### 1. ProofWatch
 
-**Purpose**: A helper library that acts as a "log bridge" for security events. Its purpose is to take policy decision data from an application and send it to an OpenTelemetry Collector as standardized logs.
+**Purpose**: A helper library that acts as a "log bridge" for security events. Its purpose is to take pre-normalized, OCSF-compliant evidence and emit it to an OpenTelemetry Collector as a standardized log stream.
 
 **Key Responsibilities**:
+* Converts OCSF-formatted data into a standardized OpenTelemetry log record.
+* Emits this log record to the OpenTelemetry Collector using the OTLP (OpenTelemetry Protocol).
 
-* It validates this data against the Open Cybersecurity Schema Framework (OCSF), ensuring it is properly structured as a security event.
-
-* It converts the OCSF-formatted data into a standardized OpenTelemetry Event.
-
-* It sends this event to the OpenTelemetry Collector using the OTLP (OpenTelemetry Protocol).
-
-`proofwatch` attributes and body are defined [here](./ATTRIBUTES.md)
+`proofwatch` attributes defined [here](./ATTRIBUTES.md)
 
 _Example code snippet_
 ```go
@@ -122,11 +111,8 @@ if err = watcher.Log(ctx, e); err != nil {
 **Purpose**: A minimal OpenTelemetry Collector distribution that acts as the runtime environment for the `complybeacon` evidence pipeline, specifically by hosting the `truthbeam` processor.
 
 **Key Responsibilities**:
-
-* Receiving log records from `proofwatch`.
-
+* Receiving log records from sources like `proofwatch`
 * Running the `truthbeam` log processor on each log record.
-
 * Exporting the processed, enriched logs to a configured backend.
 
 ### 3. TruthBeam
@@ -134,21 +120,16 @@ if err = watcher.Log(ctx, e); err != nil {
 **Purpose**: To enrich log records with compliance-related context by querying the `compass` service. This is the core logic that transforms a simple policy check into an actionable compliance event.
 
 **Key Responsibilities**:
-> Note: Cache and async patterns are currently unimplemented
-* Local Cache: Maintains a local, in-memory cache of previously enriched data for fast lookups.
-
-* Asynchronous API Calls: Puts requests for cache misses into a separate queue and uses a background worker to call the compass API.
-
-* Graceful Degradation: Skips enrichment on API failures, tagging the log record with an enrichment_status: skipped attribute.
+* Maintains a local, in-memory cache of previously enriched data to reduce API calls and improve performance.
+* Queries the Compass API for enrichment data based on attributes in the log record.
+* Skips enrichment on API failures, tagging the log record with an enrichment_status: skipped attribute to enable graceful degradation.
+* Adds the returned enrichment data as new attributes to the log record.
 
 ### 4. Compass
 
 **Purpose**: A centralized lookup service that provides compliance context. It's the source of truth for mapping policies to standards and risk attributes.
 
 **Key Responsibilities**:
-
 * Receiving an EnrichmentRequest from `truthbeam`.
-
-* Performing a lookup based on policy.id and the policy details.
-
-* Returning an EnrichmentResponse with a compliance result, relevant baselines, and requirements.
+* Performing a lookup based on the policy details.
+* Returning an EnrichmentResponse with compliance attributes.
