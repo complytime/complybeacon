@@ -19,12 +19,12 @@ type Mapper struct {
 	plans map[string][]layer4.AssessmentPlan
 }
 
-func (m *Mapper) AddEvaluationPlan(catalogId string, plans []layer4.AssessmentPlan) {
+func (m *Mapper) AddEvaluationPlan(catalogId string, plan layer4.EvaluationPlan) {
 	existingPlans, ok := m.plans[catalogId]
 	if !ok {
-		m.plans[catalogId] = plans
+		m.plans[catalogId] = plan.Plans
 	} else {
-		existingPlans = append(existingPlans, plans...)
+		existingPlans = append(existingPlans, plan.Plans...)
 		m.plans[catalogId] = existingPlans
 	}
 }

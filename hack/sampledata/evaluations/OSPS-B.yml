@@ -1,3 +1,4 @@
+plans:
 - control-id: OSPS-QA-07
   assessments:
     - requirement-id: OSPS-QA-07.01

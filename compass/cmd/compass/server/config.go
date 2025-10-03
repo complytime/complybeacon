@@ -95,7 +95,7 @@ func NewMapperFromDir(pluginID mapper.ID, evaluationsPath string) (mapper.Mapper
 			return err
 		}
 
-		var evaluation []layer4.AssessmentPlan
+		var evaluation layer4.EvaluationPlan
 		err = yaml.Unmarshal(content, &evaluation)
 		if err != nil {
 			return err

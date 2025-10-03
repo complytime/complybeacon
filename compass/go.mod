@@ -8,7 +8,7 @@ require (
 	github.com/getkin/kin-openapi v0.132.0
 	github.com/gin-gonic/gin v1.10.1
 	github.com/goccy/go-yaml v1.18.0
-	github.com/ossf/gemara v0.9.0
+	github.com/ossf/gemara v0.11.0
 )
 
 require (

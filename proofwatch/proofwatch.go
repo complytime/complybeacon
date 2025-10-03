@@ -7,30 +7,43 @@ import (
 	"log"
 	"time"
 
+	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 	olog "go.opentelemetry.io/otel/log"
 	"go.opentelemetry.io/otel/log/global"
-	"go.opentelemetry.io/otel/metric"
+)
+
+const (
+	// ScopeName is the instrumentation scope name.
+	ScopeName = "github.com/complytime/complybeacon/proofwatch"
 )
 
 type ProofWatch struct {
-	name          string
 	logger        olog.Logger
 	observer      *EvidenceObserver
 	levelSeverity olog.Severity
 }
 
 // NewProofWatch creates a new ProofWatch instance with OpenTelemetry logging.
-func NewProofWatch(name string, meter metric.Meter) (*ProofWatch, error) {
+func NewProofWatch(opts ...OptionFunc) (*ProofWatch, error) {
+	cfg := config{
+		TracerProvider: otel.GetTracerProvider(),
+		MeterProvider:  otel.GetMeterProvider(),
+		LogProvider:    global.GetLoggerProvider(),
+	}
+	for _, opt := range opts {
+		opt(&cfg)
+	}
+
+	meter := cfg.MeterProvider.Meter(ScopeName)
 	observer, err := NewEvidenceObserver(meter)
 	if err != nil {
 		return nil, err
 	}
 	return &ProofWatch{
-		name:     name,
-		logger:   global.GetLoggerProvider().Logger("proofwatch"),
+		logger:   cfg.LogProvider.Logger(ScopeName),
 		observer: observer,
-		// TODO: Allow this value to be overridden
+		// Default severity
 		levelSeverity: olog.SeverityInfo,
 	}, nil
 }
@@ -50,7 +63,6 @@ func (w *ProofWatch) LogWithSeverity(ctx context.Context, evidence Evidence, sev
 	}
 
 	record := olog.Record{}
-	record.SetEventName("beacon.policy.log")
 	record.SetSeverity(severity)
 	record.SetObservedTimestamp(time.Now())
 	record.AddAttributes(ToLogKeyValues(attrs)...)

@@ -16,7 +16,7 @@ ComplyBeacon is a policy-driven observability toolkit composed of four main comp
 
 ### 1. ProofWatch
 
-A instrumentation library that accepts and emits pre-normalized compliance evidence as an OpenTelemetry log stream, while also instrumenting metrics for real-time observability.
+An instrumentation library that accepts and emits pre-normalized compliance evidence as an OpenTelemetry log stream, while also instrumenting metrics for real-time observability.
 
 ### 2. Beacon
 
