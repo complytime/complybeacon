@@ -12,7 +12,7 @@ import (
 type Mapper interface {
 	PluginName() ID
 	Map(evidence api.RawEvidence, scope Scope) (api.Compliance, api.Status)
-	AddEvaluationPlan(catalogId string, plans []layer4.AssessmentPlan)
+	AddEvaluationPlan(catalogId string, plan layer4.EvaluationPlan)
 }
 
 // ID represents the identity for a transformer.
