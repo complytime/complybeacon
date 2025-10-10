@@ -1,0 +1,243 @@
+# Best-practices pipeline combining security transparency (SBOM, attestations) with operational excellence (pre-push validation)
+name: publish-images
+
+on:
+  push:
+    branches: 
+      - main
+    tags: [ 'v*.*.*' ]
+    paths:
+      - '**/Containerfile*'
+      - '.github/workflows/**'
+  schedule:
+    - cron: '0 0 */30 * *'  # Monthly rebuilds for base image security updates
+  workflow_dispatch:  # Allow manual triggering
+    inputs:
+      force_rebuild:
+        description: 'Force rebuild without cache'
+        type: boolean
+        required: false
+        default: false
+
+permissions:
+  contents: read
+  packages: write
+  id-token: write        # for OIDC (attestations / cosign keyless)
+  attestations: write    # publish provenance
+  security-events: write # for the Trivy SARIF step
+
+jobs:
+  detect-images:
+ 
+    if: github.repository == 'complytime/complybeacon'
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.mk-matrix.outputs.matrix }}
+    steps:
+      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+      - id: mk-matrix
+        shell: bash
+        run: |
+          set -euo pipefail
+          entries=()
+          
+          # Auto-discover all Containerfiles
+          while IFS= read -r fullpath; do
+            dir="$(dirname "$fullpath" | sed 's|^\./||')"
+            file="$(basename "$fullpath")"
+            
+            # Determine context (parent directory if in subdirectory like images/)
+            if [[ "$dir" == */images ]]; then
+              context="./${dir%/images}"
+              containerfile="images/${file}"
+            else
+              context="./${dir}"
+              containerfile="${file}"
+            fi
+            
+            base="$(echo "$context" | sed 's|^\./||')"
+            image="ghcr.io/complytime/complybeacon-${base}"
+            # Containerfile path must be relative to repo root for docker/build-push-action
+            full_containerfile_path="${context}/${containerfile}"
+            entries+=( "{\"name\":\"${base}\",\"context\":\"${context}\",\"dockerfile\":\"${full_containerfile_path}\",\"image\":\"${image}\"}" )
+          done < <(find . -maxdepth 3 -type f -name 'Containerfile*' -not -path "./.github/*" -print | sort -u)
+          
+          if [[ "${#entries[@]}" -eq 0 ]]; then
+            echo "No Containerfiles found. Producing empty matrix."
+            echo "matrix={\"include\":[]}" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          
+          json="$(printf '{ "include": [ %s ] }' "$(IFS=,; echo "${entries[*]}")")"
+          echo "matrix=${json}" >> "$GITHUB_OUTPUT"
+          echo "Discovered matrix: ${json}"
+
+  build-and-push:
+    needs: detect-images
+    # Only run in the upstream repo (not forks) to prevent accidental publishing
+    if: ${{ fromJSON(needs.detect-images.outputs.matrix).include[0] != null && github.repository == 'complytime/complybeacon' }}
+    runs-on: ubuntu-latest
+    strategy:
+      matrix: ${{ fromJSON(needs.detect-images.outputs.matrix) }}
+    steps:
+      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+      - name: Docker metadata
+        id: meta
+        uses: docker/metadata-action@c1e51972afc2121e065aed6d45c65596fe445f3f # v5.8.0
+        with:
+          images: ${{ matrix.image }}
+          tags: |
+            # For semantic version tags (v1.2.3)
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=semver,pattern={{major}},enable=${{ !startsWith(github.ref, 'refs/tags/v0.') }}
+            # For branch commits
+            type=ref,event=branch,suffix=-{{sha}}
+            type=sha,prefix=sha-
+            # For scheduled builds
+            type=schedule,pattern={{date 'YYYYMMDD-HHmmss'}},prefix=scheduled-
+            # Latest tag for default branch
+            type=raw,value=latest,enable={{is_default_branch}}
+          flavor: |
+            latest=auto
+          labels: |
+            org.opencontainers.image.title=${{ matrix.name }}
+            org.opencontainers.image.description=ComplyBeacon ${{ matrix.name }} service
+            org.opencontainers.image.vendor=ComplyTime
+
+      - name: Log in to GHCR
+        uses: docker/login-action@5e57cd118135c172c3672efd75eb46360885c0ef # v3.6.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@29109295f81e9208d7d86ff1c6c12d2833863392 # v3.6.0
+        
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@f7ce87c1d6bead3e36075b2ce75da1f6cc28aaca # v3.9.0
+
+      # STAGE 1: Build locally first (don't push yet!)
+      - name: Build and load to Docker (Stage 1 - Local Build)
+        id: build-local
+        uses: docker/build-push-action@4f58ea79222b3b9dc2c8bbdd6debcef730109a75 # v6.9.0
+        with:
+          context: ${{ matrix.context }}
+          file: ${{ matrix.dockerfile }}
+          load: true              # Load into local Docker daemon
+          push: false             # DON'T push yet!
+          platforms: linux/amd64  # Single platform for testing
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          # Disable attestations for local build (incompatible with --load)
+          sbom: false
+          provenance: false
+
+      # STAGE 2: Critical security check - scan for secrets (WILL FAIL BUILD)
+      - name: Scan for secrets (Stage 2 - Secret Detection)
+        uses: aquasecurity/trivy-action@6e7b7d1fd3e4fef0c5fa8cce1229c54b2c9bd0d8 # 0.24.0
+        with:
+          image-ref: ${{ matrix.image }}:${{ steps.meta.outputs.version }}
+          exit-code: 1            # FAIL the workflow if secrets found!
+          scanners: secret
+          severity: HIGH,CRITICAL,MEDIUM
+          format: table
+
+      # STAGE 3: Scan for vulnerabilities (for awareness, uploads to Security tab)
+      - name: Scan for vulnerabilities (Stage 3 - Vulnerability Scan)
+        uses: aquasecurity/trivy-action@6e7b7d1fd3e4fef0c5fa8cce1229c54b2c9bd0d8 # 0.24.0
+        with:
+          image-ref: ${{ matrix.image }}:${{ steps.meta.outputs.version }}
+          format: sarif
+          output: trivy-results.sarif
+          vuln-type: 'os,library'
+          severity: HIGH,CRITICAL
+          ignore-unfixed: true
+
+      - name: Upload vulnerability scan results
+        uses: github/codeql-action/upload-sarif@fbed2d2d53d0343436c1d6332dae0b38394d3917 # v3.30.7
+        with:
+          sarif_file: trivy-results.sarif
+          category: ${{ matrix.name }}-vulnerabilities
+
+      # NOTE: E2E testing has been moved to feature/enhanced-img-e2e-testing branch
+      # and will be integrated in a future PR with comprehensive service testing
+
+      # STAGE 4: Multi-arch build and push (uses cache, super fast!)
+      - name: Build and push multi-arch (Stage 4 - Final Push)
+        id: build
+        uses: docker/build-push-action@4f58ea79222b3b9dc2c8bbdd6debcef730109a75 # v6.9.0
+        with:
+          context: ${{ matrix.context }}
+          file: ${{ matrix.dockerfile }}
+          push: true              # NOW safe to push!
+          platforms: linux/amd64,linux/arm64
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha    # Uses cache from Stage 1
+          cache-to: type=gha,mode=max
+          sbom: true
+          provenance: mode=max
+          no-cache: ${{ github.event.inputs.force_rebuild == 'true' }}
+
+      - name: Export digest
+        id: digest
+        run: echo "digest=${{ steps.build.outputs.digest }}" >> $GITHUB_OUTPUT
+
+      # STAGE 5: Attestations for supply chain security
+      - name: Attest build provenance (Stage 5 - Attestations)
+        uses: actions/attest-build-provenance@ef244123eb79f2f7a7e75d99086184180e6d0018 #  v1.4.4
+        with:
+          subject-name: ${{ matrix.image }}
+          subject-digest: ${{ steps.digest.outputs.digest }}
+          push-to-registry: true
+
+      # STAGE 6: Sign image with Cosign
+      - name: Install Cosign
+        uses: sigstore/cosign-installer@053f9b74638557590800a301da1ba82351507e2c # v3.8.1
+        
+      - name: Sign image (Stage 6 - Signing)
+        env:
+          COSIGN_EXPERIMENTAL: "true"
+        run: |
+          IMAGE_WITH_DIGEST="${{ matrix.image }}@${{ steps.digest.outputs.digest }}"
+          echo " Signing: $IMAGE_WITH_DIGEST"
+          cosign sign --yes "$IMAGE_WITH_DIGEST"
+
+      # STAGE 7: Verify signature (ensure signing worked!)
+      - name: Verify signature (Stage 7 - Verification)
+        env:
+          COSIGN_EXPERIMENTAL: "true"
+        run: |
+          IMAGE_WITH_DIGEST="${{ matrix.image }}@${{ steps.digest.outputs.digest }}"
+          echo "Verifying signature: $IMAGE_WITH_DIGEST"
+          cosign verify "$IMAGE_WITH_DIGEST" \
+            --certificate-identity-regexp="https://github\.com/${{ github.repository_owner }}/.*" \
+            --certificate-oidc-issuer=https://token.actions.githubusercontent.com
+          echo " Signature verified successfully!"
+
+      # Summary
+      - name: Published image summary
+        run: |
+          cat >> $GITHUB_STEP_SUMMARY <<EOF
+          ## Successfully Published Image
+          
+          **Service:** ${{ matrix.name }}
+          **Image:** ${{ matrix.image }}
+          **Digest:** ${{ steps.digest.outputs.digest }}
+          
+          ### Tags
+          \`\`\`
+          $(echo "${{ steps.meta.outputs.tags }}" | tr ',' '\n')
+          \`\`\`
+          
+          ### Security Checks Passed
+          - Secret scanning
+          - Vulnerability scanning
+          - SBOM generated
+          - Provenance attestation
+          - Image signed and verified
+          EOF

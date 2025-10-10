@@ -38,6 +38,7 @@ services:
         /run.sh
 
   compass:
+    image: ghcr.io/complytime/complybeacon-compass:latest
     build:
       context: .
       dockerfile: ./compass/images/Containerfile.compass
@@ -49,7 +50,19 @@ services:
     ports:
       - "8081:8081"
 
+  compass-secondary:
+    image: ghcr.io/complytime/complybeacon-compass:latest
+    # Note: Only uses published image, no local build
+    restart: unless-stopped
+    volumes:
+      - ./hack/sampledata:/sampledata
+      - ./hack/demo/config.yaml:/config.yaml
+    command: ["--config", "/config.yaml", "--catalog", "/sampledata/osps.yaml",  "--port", "8081", "--skip-tls"]
+    ports:
+      - "8082:8081"
+
   collector:
+    image: ghcr.io/complytime/complybeacon-beacon-distro:latest
     build:
       context: ./beacon-distro
       dockerfile: Containerfile.collector
@@ -65,6 +78,7 @@ services:
       - compass
 
   collector-agent:
+    image: ghcr.io/complytime/complybeacon-beacon-distro:latest
     build:
       context: ./beacon-distro
       dockerfile: Containerfile.collector
