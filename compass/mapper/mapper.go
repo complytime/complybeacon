@@ -11,7 +11,7 @@ import (
 // mapper RawEvidence into a `gemara` AssessmentPlan.
 type Mapper interface {
 	PluginName() ID
-	Map(evidence api.RawEvidence, scope Scope) (api.Compliance, api.Status)
+	Map(evidence api.Evidence, scope Scope) api.Compliance
 	AddEvaluationPlan(catalogId string, plans ...layer4.AssessmentPlan)
 }
 

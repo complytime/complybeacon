@@ -24,12 +24,11 @@ func TestNewService(t *testing.T) {
 
 func TestEnrich(t *testing.T) {
 	t.Run("enriches evidence with compliance data", func(t *testing.T) {
-		evidence := api.RawEvidence{
-			Id:        "test-raw-evidence",
-			Source:    "test-policy-engine",
-			PolicyId:  "AC-1",
-			Decision:  "pass",
-			Timestamp: time.Now(),
+		evidence := api.Evidence{
+			PolicyEngineName:       "test-policy-engine",
+			PolicyRuleId:           "AC-1",
+			PolicyEvaluationStatus: api.EvidencePolicyEvaluationStatusPassed,
+			Timestamp:              time.Now(),
 		}
 		scope := make(mapper.Scope)
 		mapperPlugin := basic.NewBasicMapper()
@@ -38,8 +37,7 @@ func TestEnrich(t *testing.T) {
 		response := enrich(evidence, mapperPlugin, scope)
 
 		assert.NotEmpty(t, response)
-		assert.NotEmpty(t, response.Status)
-		assert.Equal(t, api.Pass, response.Status.Title)
+		assert.NotEmpty(t, response.Compliance)
 		// Compliance may be empty - expected behavior for basic mapper
 	})
 }
