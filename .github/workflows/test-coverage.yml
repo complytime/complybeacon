@@ -1,0 +1,107 @@
+---
+name: sonarcloud
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+  pull_request_target:
+    types: [opened, synchronize, reopened]
+    branches: [main, develop]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  GOTOOLCHAIN: local
+  SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+
+jobs:
+  sonarcloud:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+
+    steps:
+      - name: Checkout
+        if: ${{ github.event_name == 'pull_request' || github.event_name == 'pull_request_target' || github.event_name == 'push' }}
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+        with:
+          fetch-depth: 2
+
+      - name: Checkout Full History
+        if: ${{ github.event_name == 'schedule' }}
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Set up Go
+        uses: actions/setup-go@44694675825211faa026b3c33043df3e48a5fa00 # v6.0.0
+        with:
+          go-version: '1.25.x'
+
+      - name: Install deps
+        run: |
+          set -euxo pipefail
+          modules=$(git ls-files '**/go.mod' | grep -v '^vendor/' | sed 's#/go\.mod##' || true)
+          if [ -z "$modules" ]; then
+            echo "No Go modules found. Skipping dependency installation."
+            exit 0
+          fi
+          for m in $modules; do
+            echo "Processing module: $m"
+            (cd "$m" 
+            if [ ! -f "go.mod" ]; then
+                echo "Error: go.mod not found in $m. Skipping."
+                continue
+            fi 
+            go mod tidy
+            go mod download
+            )
+          done
+      
+      - name: Generate coverage
+        run: |
+          set -euxo pipefail
+          modules=$(git ls-files '**/go.mod' | grep -v '^vendor/' | sed 's#/go\.mod##' || true)
+          for m in $modules; do
+            (
+              cd "$m"
+              echo "--- generating coverage for module: $m"
+              if ! go test -v -covermode=atomic -coverprofile=coverage.out ./...; then
+                echo "--- ERROR: go test failed for module: $m"
+                exit 1
+              fi
+              go tool cover -func=coverage.out | tail -n1 || true
+            )
+          done
+          echo "$(go env GOPATH)/bin" >> "$GITHUB_PATH"
+          go install github.com/wadey/gocovmerge@latest
+          covs=$(for m in $modules; do [ -f "$m/coverage.out" ] && echo "$m/coverage.out"; done)
+          if [ -z "$covs" ]; then
+            echo "No coverage files found; creating empty coverage.out"
+            echo "mode: atomic" > coverage.out
+          else
+            # shellcheck disable=SC2086
+            gocovmerge $covs > coverage.out
+          fi
+          # Quick summary
+          go tool cover -func=coverage.out | tail -n1 || true
+
+      - name: Sonar Scan
+        continue-on-error: true
+        uses: SonarSource/sonarqube-scan-action@fd88b7d7ccbaefd23d8f36f73b59db7a3d246602 # v6.0.0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        with:
+          args: >
+            -Dsonar.go.coverage.reportPaths=coverage.out
+            -Dsonar.qualitygate.wait=true
+            -Dsonar.projectKey=rh-psce_complybeacon
+            -Dsonar.organization=rh-psce

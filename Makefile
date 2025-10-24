@@ -40,6 +40,26 @@ test: ## Runs unit tests for every module in the monorepo.
 	@echo "--- All tests passed! ---"
 .PHONY: test
 
+test-coverage: ## Runs tests with coverage for all modules
+	@for m in $(MODULES); do \
+		echo "Running tests with coverage for $$m..."; \
+		(cd $$m && go test -v -race -coverprofile=coverage.out -covermode=atomic ./...); \
+		if [ $$? -ne 0 ]; then \
+			echo "Tests failed for module: $$m"; \
+			exit 1; \
+		fi; \
+	done
+	@echo "--- All tests passed with coverage! ---"
+.PHONY: test-coverage
+
+coverage-report: test-coverage ## Generate HTML coverage report
+	@for m in $(MODULES); do \
+		echo "Generating coverage report for $$m..."; \
+		(cd $$m && go tool cover -html=coverage.out -o coverage.html); \
+	done
+	@echo "--- Coverage reports generated! ---"
+.PHONY: coverage-report
+
 # ------------------------------------------------------------------------------
 # Build Target
 # This assumes the main package is in a subdirectory named 'cmd/'.
