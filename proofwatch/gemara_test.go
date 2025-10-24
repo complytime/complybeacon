@@ -7,19 +7,26 @@ import (
 	"github.com/ossf/gemara/layer4"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"go.opentelemetry.io/otel/attribute"
 )
+
+func attrsToMap(t *testing.T, attrs []attribute.KeyValue) map[string]any {
+	t.Helper()
+	m := make(map[string]any, len(attrs))
+	for _, a := range attrs {
+		m[string(a.Key)] = a.Value.AsInterface()
+	}
+	return m
+}
 
 func TestGemaraEvidenceAttributes(t *testing.T) {
 	evidence := createTestGemaraEvidence()
 	attrs := evidence.Attributes()
+	require.NotEmpty(t, attrs)
 
-	// Check that required attributes are present
-	attrMap := make(map[string]interface{})
-	for _, attr := range attrs {
-		attrMap[string(attr.Key)] = attr.Value.AsInterface()
-	}
+	attrMap := attrsToMap(t, attrs)
 
-	// Verify core compliance attributes based on actual implementation
+	// Core compliance attributes
 	assert.Equal(t, "test-author", attrMap[POLICY_SOURCE])
 	assert.Equal(t, "test-control-id", attrMap[COMPLIANCE_CONTROL_ID])
 	assert.Equal(t, "test-catalog-id", attrMap[COMPLIANCE_CONTROL_CATALOG_ID])
@@ -27,7 +34,7 @@ func TestGemaraEvidenceAttributes(t *testing.T) {
 	assert.Equal(t, "audit", attrMap[POLICY_ENFORCEMENT_ACTION])
 	assert.Equal(t, "test-procedure-id", attrMap[POLICY_ID])
 
-	// Verify optional attributes
+	// Optional attributes
 	assert.Equal(t, "Test assessment message", attrMap[POLICY_STATUS_DETAIL])
 	assert.Equal(t, "Test recommendation", attrMap[COMPLIANCE_CONTROL_REMEDIATION_DESCRIPTION])
 }
@@ -68,25 +75,20 @@ func TestGemaraEvidenceTimestamp(t *testing.T) {
 				},
 			}
 
-			timestamp := evidence.Timestamp()
-
+			ts := evidence.Timestamp()
 			if tt.expectErr {
-				// When parsing fails, should return current time
-				now := time.Now()
-				assert.True(t, timestamp.After(now.Add(-time.Second)) && timestamp.Before(now.Add(time.Second)),
-					"Expected current time when parsing fails, got %v", timestamp)
+				assert.WithinDuration(t, time.Now(), ts, time.Second)
 			} else {
-				// When parsing succeeds, should return the parsed time
 				expected, err := time.Parse(time.RFC3339, tt.endTime)
 				require.NoError(t, err)
-				assert.Equal(t, expected, timestamp)
+				assert.Equal(t, expected, ts)
 			}
 		})
 	}
 }
 
 func TestGemaraEvidenceAttributesEmptyFields(t *testing.T) {
-	// Test with empty optional fields
+	// Empty optional fields
 	evidence := GemaraEvidence{
 		Metadata: layer4.Metadata{
 			Author: layer4.Author{
@@ -107,16 +109,14 @@ func TestGemaraEvidenceAttributesEmptyFields(t *testing.T) {
 	}
 
 	attrs := evidence.Attributes()
-	attrMap := make(map[string]interface{})
-	for _, attr := range attrs {
-		attrMap[string(attr.Key)] = attr.Value.AsInterface()
-	}
+	require.NotEmpty(t, attrs)
+	attrMap := attrsToMap(t, attrs)
 
-	// Verify required attributes are present
+	// Required present
 	assert.Equal(t, "test-author", attrMap[POLICY_SOURCE])
 	assert.Equal(t, "test-control-id", attrMap[COMPLIANCE_CONTROL_ID])
 
-	// Verify optional attributes are not present when empty
+	// Optional omitted
 	assert.NotContains(t, attrMap, POLICY_STATUS_DETAIL)
 	assert.NotContains(t, attrMap, COMPLIANCE_CONTROL_REMEDIATION_DESCRIPTION)
 }
@@ -165,17 +165,15 @@ func TestGemaraEvidenceAttributesDifferentResults(t *testing.T) {
 			}
 
 			attrs := evidence.Attributes()
-			attrMap := make(map[string]interface{})
-			for _, attr := range attrs {
-				attrMap[string(attr.Key)] = attr.Value.AsInterface()
-			}
+			require.NotEmpty(t, attrs)
+			attrMap := attrsToMap(t, attrs)
 
 			assert.Equal(t, tt.expected, attrMap[POLICY_EVALUATION_STATUS])
 		})
 	}
 }
 
-// Helper function to create test Gemara evidence
+// This remains the canonical helper for Gemara evidence tests.
 func createTestGemaraEvidence() GemaraEvidence {
 	return GemaraEvidence{
 		Metadata: layer4.Metadata{

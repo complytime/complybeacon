@@ -260,6 +260,52 @@ func TestValidateEvidenceFields(t *testing.T) {
 	}
 }
 
+func TestStringVal(t *testing.T) {
+	tests := []struct {
+		name         string
+		s            *string
+		defaultValue string
+		expected     string
+	}{
+		{
+			name:         "valid string",
+			s:            stringPtr("test"),
+			defaultValue: "default",
+			expected:     "test",
+		},
+		{
+			name:         "nil string",
+			s:            nil,
+			defaultValue: "default",
+			expected:     "default",
+		},
+		{
+			name:         "empty string",
+			s:            stringPtr(""),
+			defaultValue: "default",
+			expected:     "",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := stringVal(tt.s, tt.defaultValue)
+			if result != tt.expected {
+				t.Errorf("stringVal() = %v, want %v", result, tt.expected)
+			}
+		})
+	}
+}
+
+// Helper functions
+func stringPtr(s string) *string {
+	return &s
+}
+
+func int32Ptr(i int32) *int32 {
+	return &i
+}
+
 // Helper function to create test evidence
 func createTestEvidence() OCSFEvidence {
 	policyName := "test-policy"
