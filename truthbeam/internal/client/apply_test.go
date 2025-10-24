@@ -14,6 +14,9 @@ import (
 	"go.opentelemetry.io/collector/pdata/plog"
 )
 
+// The apply tests validate attribute application logic for enrichment of log records
+// with compliance data from the compass API.
+
 // TestApplyAttributes tests the ApplyAttributes functionality with a valid response.
 func TestApplyAttributes(t *testing.T) {
 	// Create a mock HTTP server

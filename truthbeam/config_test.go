@@ -7,6 +7,9 @@ import (
 	"go.opentelemetry.io/collector/config/confighttp"
 )
 
+// The config tests are table-driven tests to validate configuration validation
+//and default values for the truthbeam processor.
+
 // TestConfigValidate tests the Validate method of the Config struct
 func TestConfigValidate(t *testing.T) {
 	tests := []struct {

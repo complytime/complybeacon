@@ -20,6 +20,9 @@ import (
 	"github.com/complytime/complybeacon/truthbeam/internal/client"
 )
 
+// The processor tests validate the core processor functionality including log processing,
+// enrichment request formation, and response handling.
+
 func TestNewTruthBeamProcessor(t *testing.T) {
 	cfg := &Config{
 		ClientConfig: confighttp.NewDefaultClientConfig(),
