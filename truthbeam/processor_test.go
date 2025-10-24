@@ -11,6 +11,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/collector/component"
+	"go.opentelemetry.io/collector/component/componenttest"
 	"go.opentelemetry.io/collector/config/confighttp"
 	"go.opentelemetry.io/collector/pdata/pcommon"
 	"go.opentelemetry.io/collector/pdata/plog"
@@ -33,7 +34,7 @@ func TestNewTruthBeamProcessor(t *testing.T) {
 	require.NoError(t, err, "Error creating truth beam processor")
 	require.NotNil(t, processor, "Processor should not be nil")
 	assert.Equal(t, cfg, processor.config)
-	assert.NotNil(t, processor.client)
+	assert.Nil(t, processor.client)
 	assert.NotNil(t, processor.logger)
 }
 
@@ -254,6 +255,8 @@ func createTestProcessor(t *testing.T, endpoint string) *truthBeamProcessor {
 	settings.Logger = zaptest.NewLogger(t)
 
 	processor, err := newTruthBeamProcessor(cfg, settings)
+	require.NoError(t, err)
+	err = processor.start(context.Background(), componenttest.NewNopHost())
 	require.NoError(t, err)
 	return processor
 }

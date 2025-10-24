@@ -43,7 +43,7 @@ func createLogsProcessor(
 	cfg component.Config,
 	next consumer.Logs,
 ) (processor.Logs, error) {
-	tbProcessor, err := newTruthBeamProcessor(cfg, set)
+	beamProcessor, err := newTruthBeamProcessor(cfg, set)
 	if err != nil {
 		return nil, err
 	}
@@ -52,7 +52,8 @@ func createLogsProcessor(
 		set,
 		cfg,
 		next,
-		tbProcessor.processLogs,
+		beamProcessor.processLogs,
 		processorhelper.WithCapabilities(processorCapabilities),
+		processorhelper.WithStart(beamProcessor.start),
 	)
 }

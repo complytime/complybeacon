@@ -17,7 +17,6 @@
 
 * **Operational Experience:** The toolkit is built for easy deployment, configuration, and maintenance using familiar cloud-native practices and protocols.
 
-### Data Flow
 
 ### Data Flow
 

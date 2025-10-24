@@ -42,6 +42,7 @@ It complements the [DESIGN.md](./DESIGN.md) document by focusing on the practica
 - **podman-compose**: For orchestrating multi-container development environments
 - **Make**: For build automation
 - **Git**: For version control
+- **openssl** Cryptography toolkit 
 
 ## Development Environment Setup
 
@@ -133,7 +134,8 @@ complybeacon/
 │   └── Containerfile.collector # Container definition
 ├── hack/                       # Development utilities
 │   ├── demo/                  # Demo configurations
-│   └── sampledata/            # Sample data for testing
+│   ├── sampledata/            # Sample data for testing
+│   └── self-signed-cert/      # self signed cert, testing/development purpose
 └── bin/                        # Built binaries (created by make build)
 ```
 
@@ -244,6 +246,23 @@ cd ../beacon-distro
 # Run collector with local processor
 ```
 
+**Local development config**
+
+If you want locally test the TruthBeam, remember to change the [manifest.yaml](../beacon-distro/manifest.yaml)
+
+Add replace directive at the end of [manifest.yaml](../beacon-distro/manifest.yaml), to make sure collector use your `truthbeam` code. Default collector will use `- gomod: github.com/complytime/complybeacon/truthbeam main`
+
+For example:
+```yaml
+replaces:
+  - github.com/complytime/complybeacon/truthbeam => github.com/AlexXuan233/complybeacon/truthbeam 52e4a76ea0f72a7049e73e7a5d67d988116a3892
+```
+or
+```yaml
+replaces:
+  - github.com/complytime/complybeacon/truthbeam => github.com/AlexXuan233/complybeacon/truthbeam main
+```
+
 ### 4. Beacon Distro Development
 
 The Beacon distribution is a custom OpenTelemetry Collector.
@@ -331,22 +350,30 @@ make weaver-codegen
 
 The demo environment uses `podman-compose` to orchestrate multiple containers. Ensure you have `podman-compose` installed before proceeding.
 
-1. **Start the full stack:**
+1. **Generate self-signed certificate**
+
+Since compass and truthbeam enabled TLS by default, first we need to generate self-signed certificate for testing/development
+
+```shell
+make generate-self-signed-cert
+```
+
+2. **Start the full stack:**
 ```bash
 make deploy
 ```
 
-2. **Test the pipeline:**
+3. **Test the pipeline:**
 ```bash
 curl -X POST http://localhost:8088/eventsource/receiver \
   -H "Content-Type: application/json" \
   -d @hack/sampledata/evidence.json
 ```
 
-3. **View results:**
+4. **View results:**
 - Grafana: http://localhost:3000
 
-4. **Stop the stack:**
+5. **Stop the stack:**
 ```bash
 make undeploy
 ```
