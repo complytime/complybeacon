@@ -29,18 +29,11 @@ func newTruthBeamProcessor(conf component.Config, set processor.Settings) (*trut
 		return nil, errors.New("invalid configuration provided")
 	}
 
-	// TODO: Apply additional options from client config including
-	// mTLS settings
-	cl, err := client.NewClient(cfg.ClientConfig.Endpoint)
-	if err != nil {
-		return nil, err
-	}
-
 	return &truthBeamProcessor{
 		config:    cfg,
 		telemetry: set.TelemetrySettings,
 		logger:    set.Logger,
-		client:    cl,
+		client:    nil,
 	}, nil
 }
 
@@ -65,4 +58,18 @@ func (t *truthBeamProcessor) processLogs(ctx context.Context, ld plog.Logs) (plo
 		}
 	}
 	return ld, nil
+}
+
+// start will add HTTP client and pre-fetch any policy data
+func (t *truthBeamProcessor) start(ctx context.Context, host component.Host) error {
+	httpClient, err := t.config.ClientConfig.ToClient(ctx, host, t.telemetry)
+	if err != nil {
+		return err
+	}
+	t.client, err = client.NewClient(t.config.ClientConfig.Endpoint, client.WithHTTPClient(httpClient))
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

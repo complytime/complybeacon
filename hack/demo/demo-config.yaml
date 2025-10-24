@@ -16,9 +16,18 @@ receivers:
 processors:
   batch:
   truthbeam:
-    endpoint: "http://compass:8081"
+    endpoint: "https://compass:8081"
+    # Configure TLS settings
     tls:
-      insecure: true
+      # Path to the CA certificate for verifying the server's certificate.
+      # This is required now that 'insecure' is false.
+      ca_file: /certs/my-ca.crt
+
+      # (Optional) If the server requires client authentication (mTLS):
+      cert_file: /certs/collector.crt
+      key_file: /certs/collector.key
+      insecure_skip_verify: true
+
   # For logs that are received from or something similar filelog instead of OTLP.
   # These are expected to be in OCSF format before entering the pipeline.
   transform/ocsf:
