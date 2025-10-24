@@ -42,6 +42,7 @@ It complements the [DESIGN.md](./DESIGN.md) document by focusing on the practica
 - **podman-compose**: For orchestrating multi-container development environments
 - **Make**: For build automation
 - **Git**: For version control
+- **openssl** Cryptography toolkit 
 
 ## Development Environment Setup
 
@@ -217,28 +218,6 @@ curl -X POST http://localhost:8081/v1/enrich \
   -d '{"evidence": {"id": "test", "timestamp": "2024-01-01T00:00:00Z", "source": "test", "policyId": "test", "decision": "compliant", "action": "observed"}}'
 ```
 
-**run service with https(Testing/development only)**
-
-- Generate self-signed certificate locally following [generate-self-signed-certificate.md](../hack/self-signed-cert/generate-self-signed-certificate.md)
-- Uncomment cert config on [config.yaml](../hack/demo/config.yaml)
-```yaml
-certConfig:
-  cert: /certs/compass.crt
-  key:  /certs/compass.key
-```
-- Uncomment volumes/command for [compass service](../compose.yaml)
-```yaml
-    volumes:
-      - ./hack/sampledata:/sampledata:Z
-      - ./hack/demo/config.yaml:/config.yaml:Z
-      # Development/Testing purpose
-      - ./hack/self-signed-cert/compass.crt:/certs/compass.crt:Z
-      - ./hack/self-signed-cert/compass.key:/certs/compass.key:Z
-    command: [ "--config", "/config.yaml", "--catalog", "/sampledata/osps.yaml",  "--port", "8081"]
-    # command: ["--config", "/config.yaml", "--catalog", "/sampledata/osps.yaml",  "--port", "8081", "--skip-tls"]
-```
-
-
 **Adding New Mappers:**
 1. Create a new mapper in `compass/mapper/plugins/`
 2. Implement the `Mapper` interface
@@ -282,32 +261,6 @@ or
 ```yaml
 replaces:
   - github.com/complytime/complybeacon/truthbeam => github.com/AlexXuan233/complybeacon/truthbeam main
-```
-
-**Run client side with https(Testing/development only)**
-
-- Generate self-signed certificate locally following [generate-self-signed-certificate.md](../hack/self-signed-cert/generate-self-signed-certificate.md)
-- Uncomment cert config on [demo-config.yaml](../hack/demo/demo-config.yaml)
-```yaml
-processors:
-  batch:
-  truthbeam:
-    # endpoint: "http://compass:8081"
-    endpoint: "https://compass:8081"
-    tls:
-      # insecure: true
-      # Configure TLS settings
-
-      # Path to the CA certificate for verifying the server's certificate.
-      ca_file: /certs/my-ca.crt
-```
-- Uncomment volumes for [collector service](../compose.yaml)
-```yaml
-    volumes:
-      - ./hack/demo/demo-config.yaml:/etc/otel-collector.yaml:Z
-      - ./data:/data:Z
-      # Development/Testing purpose
-      - ./hack/self-signed-cert/my-ca.crt:/certs/my-ca.crt:Z
 ```
 
 ### 4. Beacon Distro Development
@@ -397,22 +350,30 @@ make weaver-codegen
 
 The demo environment uses `podman-compose` to orchestrate multiple containers. Ensure you have `podman-compose` installed before proceeding.
 
-1. **Start the full stack:**
+1. **Generate self-signed certificate**
+
+Since compass and truthbeam enabled TLS by default, first we need to generate self-signed certificate for testing/development
+
+```shell
+make generate-self-signed-cert
+```
+
+2. **Start the full stack:**
 ```bash
 make deploy
 ```
 
-2. **Test the pipeline:**
+3. **Test the pipeline:**
 ```bash
 curl -X POST http://localhost:8088/eventsource/receiver \
   -H "Content-Type: application/json" \
   -d @hack/sampledata/evidence.json
 ```
 
-3. **View results:**
+4. **View results:**
 - Grafana: http://localhost:3000
 
-4. **Stop the stack:**
+5. **Stop the stack:**
 ```bash
 make undeploy
 ```

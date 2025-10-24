@@ -16,15 +16,11 @@ receivers:
 processors:
   batch:
   truthbeam:
-    endpoint: "http://compass:8081"
-    # endpoint: "https://compass:8081"
+    endpoint: "https://compass:8081"
     tls:
-      insecure: true
       # Configure TLS settings
-
       # Path to the CA certificate for verifying the server's certificate.
-      # ca_file: /certs/my-ca.crt
-
+      ca_file: /certs/truthbeam.crt
       # (Optional) If the server requires client authentication (mTLS):
       # cert_file: /path/to/your/client.crt
       # key_file: /path/to/your/client.key

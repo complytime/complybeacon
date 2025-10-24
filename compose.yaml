@@ -47,10 +47,9 @@ services:
       - ./hack/sampledata:/sampledata:Z
       - ./hack/demo/config.yaml:/config.yaml:Z
       # Development/Testing purpose
-      # - ./hack/self-signed-cert/compass.crt:/certs/compass.crt:Z
-      # - ./hack/self-signed-cert/compass.key:/certs/compass.key:Z
-    # command: [ "--config", "/config.yaml", "--catalog", "/sampledata/osps.yaml",  "--port", "8081"]
-    command: ["--config", "/config.yaml", "--catalog", "/sampledata/osps.yaml",  "--port", "8081", "--skip-tls"]
+      - ./hack/self-signed-cert/compass.crt:/certs/compass.crt:Z
+      - ./hack/self-signed-cert/compass.key:/certs/compass.key:Z
+    command: [ "--config", "/config.yaml", "--catalog", "/sampledata/osps.yaml",  "--port", "8081"]
     ports:
       - "8081:8081"
 
@@ -65,7 +64,7 @@ services:
       - ./hack/demo/demo-config.yaml:/etc/otel-collector.yaml:Z
       - ./data:/data:Z
       # Development/Testing purpose
-      # - ./hack/self-signed-cert/my-ca.crt:/certs/my-ca.crt:Z
+      - ./hack/self-signed-cert/truthbeam.crt:/certs/truthbeam.crt:Z
     ports:
       - "4317:4317"
       - "8088:8088"
