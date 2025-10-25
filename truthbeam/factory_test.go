@@ -10,6 +10,9 @@ import (
 	"go.opentelemetry.io/collector/config/confighttp"
 )
 
+// The factory tests validate processor factory lifecycle including creation,
+// configuration validation, and proper component initialization.
+
 func TestCreateDefaultConfig(t *testing.T) {
 	factory := NewFactory()
 	config := factory.CreateDefaultConfig()
