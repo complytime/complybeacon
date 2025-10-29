@@ -1,187 +1,208 @@
 groups:
   - id: registry.policy
     type: attribute_group
-    display_name: Policy and Compliance Evidence Attributes
+    display_name: Policy Engine Attributes
     brief: >
-      This group describes attributes specific to policy decision logs. This attributes are inspired
-      by the OCSF Policy object and the `gemara` model.
+      Attributes emitted by policy engines (OPA, Gatekeeper, etc.) during policy evaluation and enforcement.
+      Maps to GEMARA Layer 4 (Evaluation) for Policy-as-Code workflows.
     attributes:
-      - id: policy.id
+      - id: policy.engine.name
         type: string
         stability: development
         brief: >
-          The identifier for the policy that was applied.
+          Name of the policy engine that performed the evaluation or enforcement action.
+        examples: [ "OPA", "Gatekeeper", "Conftest", "Sentinel" ]
         requirement_level: required
-        examples: ["branch-protection-123"]
-      - id: policy.name
+      - id: policy.engine.version
         type: string
         stability: development
         brief: >
-          The human-readable name of the policy
+          Version of the policy engine.
+        examples: [ "v3.14.0", "v0.45.0", "v1.2.3", "v2.0.1" ]
         requirement_level: recommended
-        examples: ["S3 Bucket Check"]
-      - id: policy.source
+      - id: policy.rule.id
         type: string
         stability: development
         brief: >
-          The identifier for the source of the policy audit log.
-        note:
-          This should identify the policy engine or assessment tool.
+          Unique identifier for the policy rule being evaluated or enforced.
+        examples: [ "deny-root-user", "require-encryption", "check-labels" ]
+        requirement_level: required
+      - id: policy.rule.name
+        type: string
+        stability: development
+        brief: >
+          Human-readable name of the policy rule.
+        examples: [ "Deny Root User", "Require Encryption", "Check Resource Labels" ]
+        requirement_level: opt_in
+      - id: policy.rule.uri
+        type: string
+        stability: development
+        brief: >
+          Source control URL and version of the policy-as-code file for auditability.
         examples:
-          ["conforma", "opa-gatekeeper", "kyverno"]
-        requirement_level: required
-      - id: policy.evaluation.status
+          ["github.com/org/policy-repo/b8a7c2e", "gitlab.com/company/policies@v1.2.3"]
+        requirement_level: recommended
+      - id: policy.evaluation.result
         type: string
         stability: development
         brief: >
-          The outcome of the policy evaluation (e.g., "deny", "allow").
-        examples: [ "pass", "fail", "error" ]
+          Result of the policy evaluation: Not Run, Passed, Failed, Needs Review, Not Applicable, or Unknown.
+        examples: [ "Not Run", "Passed", "Failed", "Needs Review", "Not Applicable", "Unknown" ]
         requirement_level: required
-      - id: policy.status.detail
+      - id: policy.evaluation.message
         type: string
         stability: development
         brief: >
-          Add contextual details around the policy status.
+          Additional context about the policy evaluation result.
         requirement_level: opt_in
         examples: ["The policy evaluation failed due to a missing attribute."]
-      - id: policy.evaluation.subject.type
+      - id: policy.target.id
         type: string
         stability: development
         brief: >
-          The subject type or resource the policy was applied to.
-        requirement_level: recommended
-        examples: ["k8s.pod", "k8s.service", "gcp.compute.instance"]
-      - id: policy.evaluation.subject.id
+          Unique identifier for the resource or entity being evaluated or enforced against.
+        examples: [ "deployment-123", "resource-456", "user-789" ]
+        requirement_level: opt_in
+      - id: policy.target.name
         type: string
         stability: development
         brief: >
-          The subject id or resource the policy was applied to.
-        requirement_level: recommended
-        examples: ["user-service-7b5f9c6d8-xyz"]
-      - id: policy.enforcement.status
+          Human-readable name of the resource or entity being evaluated or enforced against.
+        examples: [ "frontend-deployment", "s3-bucket-secrets", "admin-user" ]
+        requirement_level: opt_in
+      - id: policy.target.type
         type: string
         stability: development
         brief: >
-          The outcome of the policy enforcement.
-        examples: [ "success", "fail", "error" ]
-        note: |
-          This is required if the policy enforcement action is not "audit".
-        requirement_level: recommended
-      - id: policy.enforcement.action
+          Type of the resource or entity being evaluated or enforced against.
+        examples: [ "deployment", "resource", "user", "configuration" ]
+        requirement_level: opt_in
+      - id: policy.target.environment
         type: string
         stability: development
         brief: >
-          The action take by the policy enforcement.
-        examples: [ "block", "mutate", "audit" ]
-        requirement_level: required
+          Environment where the target resource or entity exists.
+        examples: [ "production", "staging", "development" ]
+        requirement_level: opt_in
+
   - id: registry.compliance
     type: attribute_group
-    display_name: Compliance Evidence Attributes
+    display_name: Compliance Assessment Attributes
     brief: >
-      This group describes attributes specific compliance audit logs. The attributes are inspired by
-      the OCSF Compliance Finding object.
+      Attributes added by compliance assessment tools to map policy results to compliance frameworks.
+      Provides compliance context, risk assessment, and regulatory mapping for audit and reporting.
+      Maps to GEMARA Layer 5 (Enforcement) for Policy-as-Code workflows.
     attributes:
-      - id: compliance.status
-        type: string
-        stability: development
-        brief: >
-          The normalized status identifier of the compliance check.
-        examples:
-          [
-            "Unknown",
-            "Pass",
-            "Warning",
-            "Fail",
-            "Other",
-          ]
-        requirement_level: required
-      - id: compliance.audit.id
-        type: string
-        stability: development
-        brief: >
-          A unique identifier for a specific audit or assessment.
-        examples:
-          ["my_audit_id"]
-        note: |
-          This aligns with a id field of a `gemara` Evaluation or Enforcement Plan. The goal to allow batching
-          and correlation of a set of findings.
-        requirement_level: recommended
       - id: compliance.control.id
         type: string
         stability: development
         brief: >
-          The unique identifier for the security control.
-        note: |
-          A control is a prescriptive, actionable set of 
-          specifications that strengthens security and compliance posture. This value may also reference
-          a specific control part.
+          Unique identifier for the security control and assessment requirement
+          being assessed.
         examples:
           [ "OSPS-QA-07.01" ]
         requirement_level: required
-      - id: compliance.control.remediation.description
+      - id: compliance.control.category
         type: string
         stability: development
         brief: >
-          The description of the remediation strategy.
+          Category or family that the security control belongs to.
+        examples:
+          [ "Access Control", "Quality"]
+        requirement_level: recommended
+      - id: compliance.control.catalog.id
+        type: string
+        stability: development
+        brief: >
+          Unique identifier for the security control catalog or framework.
+        examples:
+          [ "OSPS-B", "CCC", "CIS"]
+        requirement_level: required
+      - id: compliance.control.applicability
+        type: string[]
+        stability: development
+        brief: >
+          Environments or contexts where this control applies.
+        examples: [ [ "Production", "Staging" ], [ "All Environments" ], [ "Kubernetes", "AWS" ] ]
+        requirement_level: opt_in
+      - id: compliance.frameworks
+        type: string[]
+        stability: development
+        brief: >
+          Regulatory or industry standards being evaluated for compliance.
+        examples: [ [ "NIST-800-53", "ISO-27001" ] ]
+        requirement_level: recommended
+      - id: compliance.requirements
+        type: string[]
+        stability: development
+        brief: >
+          Compliance requirement identifiers from the frameworks impacted.
+        examples: [ [ "AC-1", "A.9.1.1" ]]
+        requirement_level: recommended
+      - id: compliance.status
+        type: string
+        stability: development
+        brief: >
+          Compliance verdict: COMPLIANT, NON_COMPLIANT, EXEMPT, NOT_APPLICABLE, or UNKNOWN.
+        examples: [ "COMPLIANT", "NON_COMPLIANT", "EXEMPT", "NOT_APPLICABLE", "UNKNOWN" ]
+        requirement_level: required
+      - id: compliance.risk.level
+        type: string
+        stability: development
+        brief: >
+          Risk level associated with non-compliance: Critical, High, Medium, Low, or Informational.
+        examples: [ "Critical", "High", "Medium", "Low", "Informational" ]
+        requirement_level: opt_in
+      - id: compliance.remediation.action
+        type: string
+        stability: development
+        brief: >
+          Action taken by the policy engine: Block, Allow, Remediate, Waive, Notify, or Unknown.
+        examples: [ "Block", "Allow", "Remediate", "Waive", "Notify", "Unknown" ]
+        requirement_level: opt_in
+      - id: compliance.remediation.status
+        type: string
+        stability: development
+        brief: >
+          Result of the policy enforcement action.
+        examples: [ "Success", "Fail", "Skipped", "Unknown" ]
+        requirement_level: opt_in
+      - id: compliance.remediation.exception.id
+        type: string
+        stability: development
+        brief: >
+          Unique identifier for the approved exception, if applicable.
+        examples: [ "EX-2025-10-001", "WAIVE-AC-1-001" ]
+        requirement_level: opt_in
+      - id: compliance.remediation.exception.active
+        type: boolean
+        stability: development
+        brief: >
+          Whether the exception was is active for this enforcement.
+        examples: [ true, false ]
+        requirement_level: opt_in
+      - id: compliance.remediation.description
+        type: string
+        stability: development
+        brief: >
+          Description of the recommended remediation strategy for this control.
         examples:
           [
             "This is a short description of the remediation strategy for this control.",
           ]
         requirement_level: opt_in
-      - id: compliance.control.catalog.id
+      - id: compliance.assessment.id
         type: string
         stability: development
         brief: >
-          The unique identifier for the security control catalog.
-        examples:
-          [
-            "OSPS-B",
-            "CCC",
-          ]
-        requirement_level: required
-      - id: compliance.requirements
-        type: string[]
-        stability: development
-        brief: >
-          The identifiers specific compliance requirements being evaluated.
-        examples:
-          [
-            ["AC-1", "PS-1", "2.1"]
-          ]
-        requirement_level: opt_in
-      - id: compliance.standards
-        type: string[]
-        stability: development
-        brief: >
-          The identifiers for regulatory or industry standards being evaluated for compliance.
-        examples:
-          [
-            ["800-53", "SSDF", "CRA"]
-          ]
-        requirement_level: opt_in
-      - id: compliance.category
-        type: string
-        stability: development
-        brief: >
-          The category a control framework pertains.
-        examples:
-          [
-            "Access Control",
-            "Quality",
-          ]
+          Unique identifier for the compliance assessment run or session.
+          Used to group findings from the same assessment execution.
+        examples: [ "assessment-2024-001", "scan-run-abc123", "compliance-check-xyz789" ]
         requirement_level: recommended
-      - id: compliance.risk.level
+      - id: compliance.enrichment.status
         type: string
         stability: development
         brief: >
-          The risk level associated with non-compliance.
-        examples:
-          [
-            "info",
-            "low",
-            "high",
-            "medium",
-            "critical",
-            "other"
-          ]
-        requirement_level: opt_in
+          Status of the compliance enrichment process: success, unmapped, partial, or unknown.
+        examples: ["success", "unmapped", "partial", "unknown"]
+        requirement_level: recommended

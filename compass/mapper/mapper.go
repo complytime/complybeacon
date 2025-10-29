@@ -8,10 +8,10 @@ import (
 )
 
 // Mapper defines a set of methods a plugin must implement for
-// mapper RawEvidence into a `gemara` AssessmentPlan.
+// mapper Policy into a `gemara` AssessmentPlan.
 type Mapper interface {
 	PluginName() ID
-	Map(evidence api.RawEvidence, scope Scope) (api.Compliance, api.Status)
+	Map(policy api.Policy, scope Scope) api.Compliance
 	AddEvaluationPlan(catalogId string, plans ...layer4.AssessmentPlan)
 }
 

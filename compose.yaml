@@ -38,7 +38,6 @@ services:
         /run.sh
 
   compass:
-    image: ghcr.io/complytime/complybeacon-compass:latest
     build:
       context: .
       dockerfile: ./compass/images/Containerfile.compass
@@ -54,7 +53,6 @@ services:
       - "8081:8081"
 
   collector:
-    image: ghcr.io/complytime/complybeacon-beacon-distro:latest
     build:
       context: ./beacon-distro
       dockerfile: Containerfile.collector
@@ -68,20 +66,5 @@ services:
     ports:
       - "4317:4317"
       - "8088:8088"
-    depends_on:
-      - compass
-
-  collector-agent:
-    image: ghcr.io/complytime/complybeacon-beacon-distro:latest
-    build:
-      context: ./beacon-distro
-      dockerfile: Containerfile.collector
-    restart: unless-stopped
-    command: [ "--config=/etc/otel-collector.yaml" ]
-    volumes:
-      - ./hack/demo/demo-agent-config.yaml:/etc/otel-collector.yaml:Z
-    ports:
-      - "4319:4319"
-      - "8089:8089"
     depends_on:
       - compass

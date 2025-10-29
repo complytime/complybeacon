@@ -2,8 +2,8 @@ package basic
 
 import (
 	"testing"
-	"time"
 
+	"github.com/ossf/gemara/layer2"
 	"github.com/ossf/gemara/layer4"
 	"github.com/stretchr/testify/assert"
 
@@ -20,57 +20,117 @@ func TestNewBasicMapper(t *testing.T) {
 	assert.Empty(t, basicMapper.plans)
 }
 
-func TestBasicMapper_Map(t *testing.T) {
+func TestBasicMapper_MapWithPlans(t *testing.T) {
 	tests := []struct {
-		name          string
-		decision      string
-		expectedTitle api.StatusTitle
-		expectedId    api.StatusId
+		name           string
+		policyRuleId   string
+		expectedStatus api.ComplianceEnrichmentStatus
 	}{
 		{
-			name:          "compliance status is pass",
-			decision:      "pass",
-			expectedTitle: api.Pass,
-			expectedId:    api.N1,
+			name:           "mapped policy rule returns success",
+			policyRuleId:   "AC-1",
+			expectedStatus: api.Success,
 		},
 		{
-			name:          "compliance status is fail",
-			decision:      "fail",
-			expectedTitle: api.Fail,
-			expectedId:    api.N2,
-		},
-		{
-			name:          "compliance status is warning",
-			decision:      "Warning",
-			expectedTitle: api.Warning,
-			expectedId:    api.N3,
-		},
-		{
-			name:          "unmapped compliance status defaults to warning",
-			decision:      "unmapped",
-			expectedTitle: api.Warning,
-			expectedId:    api.N3,
+			name:           "unmapped policy rule returns unmapped",
+			policyRuleId:   "UNKNOWN-RULE",
+			expectedStatus: api.Unmapped,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			basicMapper := NewBasicMapper()
-			evidence := api.RawEvidence{
-				Id:        "test-raw-evidence",
-				Source:    "test-policy-engine",
-				PolicyId:  "AC-1",
-				Decision:  tt.decision,
-				Timestamp: time.Now(),
+
+			// Add a test plan
+			plans := []layer4.AssessmentPlan{
+				{
+					Control: layer4.Mapping{EntryId: "AC-1", ReferenceId: "test-catalog"},
+					Assessments: []layer4.Assessment{
+						{
+							Requirement: layer4.Mapping{EntryId: "AC-1-REQ", ReferenceId: "test-catalog"},
+							Procedures: []layer4.AssessmentProcedure{
+								{
+									Id:            "AC-1",
+									Documentation: "Test procedure",
+								},
+							},
+						},
+					},
+				},
 			}
-			scope := make(mapper.Scope)
+			basicMapper.AddEvaluationPlan("test-catalog", plans...)
 
-			_, status := basicMapper.Map(evidence, scope)
+			// Create a test catalog
+			catalog := layer2.Catalog{
+				Metadata: layer2.Metadata{Id: "test-catalog"},
+				ControlFamilies: []layer2.ControlFamily{
+					{
+						Title: "Access Control",
+						Controls: []layer2.Control{
+							{
+								Id: "AC-1",
+								GuidelineMappings: []layer2.Mapping{
+									{
+										ReferenceId: "NIST-800-53",
+										Entries: []layer2.MappingEntry{
+											{ReferenceId: "AC-1"},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			}
 
-			assert.Equal(t, tt.expectedTitle, status.Title)
-			assert.Equal(t, tt.expectedId, *status.Id)
+			// Create test policy
+			policy := api.Policy{
+				PolicyEngineName: "test-policy-engine",
+				PolicyRuleId:     tt.policyRuleId,
+			}
+			scope := mapper.Scope{
+				"test-catalog": catalog,
+			}
+
+			// Test Map method
+			compliance := basicMapper.Map(policy, scope)
+			assert.NotNil(t, compliance)
+			assert.Equal(t, tt.expectedStatus, compliance.EnrichmentStatus)
+
+			if tt.expectedStatus == api.Success {
+				assert.Equal(t, "AC-1-REQ", compliance.Control.Id)
+				assert.Equal(t, "Access Control", compliance.Control.Category)
+				assert.Equal(t, "test-catalog", compliance.Control.CatalogId)
+				assert.NotNil(t, compliance.Control.RemediationDescription)
+				assert.Equal(t, "Test procedure", *compliance.Control.RemediationDescription)
+				assert.Contains(t, compliance.Frameworks.Frameworks, "NIST-800-53")
+			} else {
+				assert.Equal(t, tt.policyRuleId, compliance.Control.Id)
+				assert.Equal(t, "Unknown", compliance.Control.Category)
+				assert.Equal(t, "unknown", compliance.Control.CatalogId)
+			}
 		})
 	}
+}
+
+func TestBasicMapper_MapUnmapped(t *testing.T) {
+	basicMapper := NewBasicMapper()
+	policy := api.Policy{
+		PolicyEngineName: "test-policy-engine",
+		PolicyRuleId:     "AC-1",
+	}
+	scope := make(mapper.Scope)
+
+	// Test Map method for unmapped policy
+	compliance := basicMapper.Map(policy, scope)
+	assert.NotNil(t, compliance)
+	assert.Equal(t, api.Unmapped, compliance.EnrichmentStatus)
+	assert.Equal(t, "AC-1", compliance.Control.Id)
+	assert.Equal(t, "Unknown", compliance.Control.Category)
+	assert.Equal(t, "unknown", compliance.Control.CatalogId)
+	assert.Empty(t, compliance.Frameworks.Requirements)
+	assert.Empty(t, compliance.Frameworks.Frameworks)
 }
 
 func TestBasicMapper_AddEvaluationPlan(t *testing.T) {

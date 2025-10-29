@@ -15,7 +15,6 @@ ARG USER_UID=10001
 USER ${USER_UID}
 
 COPY config.yaml /etc/otelcol-beacon/config.yaml
-COPY ./mappings /etc/otelcol-beacon/mappings
 COPY --from=certs /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
 COPY --chmod=755 --from=build-stage /build/beacon/otelcol-beacon /otelcol-beacon
 

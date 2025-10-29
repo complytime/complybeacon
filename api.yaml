@@ -1,37 +1,36 @@
 # Assisted by: Gemini 2.5 Pro
-openapi: 3.0.0
+openapi: 3.0.3
 info:
   title: Compass Service API
   version: 0.1.0
   description: |
-    API for the Compass service. This service provides control-based attribute enrichment for telemetry data,
-    leveraging internal domain logic and the Compass project's compliance knowledge.
-    It's designed to be called by an OpenTelemetry Collector's custom processor to enrich logs, metrics, and traces.
-
-#security:
-#  - BearerAuth: []
+    A centralized compliance metadata server that provides policy-to-compliance mappings,
+    control frameworks, and risk assessments for policy-as-code workflows. This service serves as 
+    the authoritative source for compliance metadata, enabling OpenTelemetry collectors and other 
+    systems to enrich policy evaluation events with standardized compliance context, 
+    regulatory mappings, and risk classifications.
 
 paths:
-  /v1/enrich:
+  /v1/metadata:
     post:
-      summary: Enrich telemetry attributes with compliance control data
+      summary: Retrieve complete compliance metadata for policy evidence
       description: |
-        Accepts a set of key telemetry attributes (e.g., asset ID, policy name, user ID) and
-        returns additional compliance-related attributes based on internal domain logic.
-        This endpoint is intended to be called by an OpenTelemetry Collector's custom processor.
+        Accepts a complete policy evidence object and returns comprehensive compliance metadata
+        including control mappings, framework requirements, risk assessments. This endpoint provides real-time
+        compliance context and should be used when you need complete, up-to-date compliance metadata.
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/EnrichmentRequest'
+              $ref: '#/components/schemas/MetadataRequest'
       responses:
         '200':
-          description: Successfully enriched attributes
+          description: Successfully retrieved complete compliance metadata for policy evidence
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/EnrichmentResponse'
+                $ref: '#/components/schemas/MetadataResponse'
         default:
           description: unexpected error
           content:
@@ -41,163 +40,143 @@ paths:
 
 components:
   schemas:
-    EnrichmentRequest:
+    MetadataRequest:
       type: object
+      description: Request payload for retrieving compliance metadata for policy evidence
       properties:
-        evidence:
-          $ref: '#/components/schemas/Evidence'
+        policy:
+          $ref: '#/components/schemas/Policy'
       required:
-        - evidence
-    Evidence:
-      type: object
-      properties:
-        class_id:
-          type: integer
-          description: A event class id for raw data OCSF schema
-        category_id:
-          type: integer
-          description: A category ID for raw data OCSF schema
-        timestamp:
-          type: string
-          format: date-time
-          description: The time when the raw evidence was generated.
-        source:
-          type: string
-          description: The source of the raw evidence (e.g., policy engine name).
-        policyId:
-          type: string
-          description: The ID of the policy that generated the evidence.
-        action:
-          type: string
-          description: The action taken by the policy enforcement point
-        decision:
-          type: string
-          description: The decision made by the policy engine (e.g., "compliant", "non-compliant").
-        rawData:
-          type: string
-          format: json
-          description: Raw JSON output from the policy engine.
-      required:
-        - id
-        - timestamp
-        - source
-        - policyId
-        - decision
-        - action
+        - policy
 
-    EnrichmentResponse:
+    MetadataResponse:
       type: object
-      description: "Enriched compliance finding with risk attributes and threat mappings."
+      description: "Complete compliance metadata including control mappings, frameworks, risk assessment, and dynamic status"
       properties:
-        threats:
-          type: array
-          items:
-            $ref: '#/components/schemas/ThreatMapping'
         compliance:
           $ref: '#/components/schemas/Compliance'
-        status:
-          $ref: '#/components/schemas/Status'
       required:
         - compliance
-        - status
+      example:
+        compliance:
+          control:
+            id: "OSPS-QA-07.01"
+            category: "Access Control"
+            catalogId: "OSPS-B"
+            applicability: ["Production", "Staging"]
+            remediationDescription: "Remove root user access and implement proper IAM policies"
+          frameworks:
+            frameworks: ["NIST-800-53", "SOC-2"]
+            requirements: ["AC-1", "CC6.1"]
+          risk:
+            level: "High"
+          enrichmentStatus: "success"
 
-    Status:
+    Policy:
       type: object
-      title: "Status"
-      description: "Compliance Result"
+      description: "Complete evidence log from policy engines and compliance assessment tools"
       properties:
-        title:
+        policyEngineName:
           type: string
-          enum:
-            - Unknown
-            - Pass
-            - Warning
-            - Fail
-            - Other
-          description: "Compliance status."
-        id:
-          type: integer
-          enum:
-            - 3
-            - 0
-            - 1
-            - 2
-            - 99
-          description: "Compliance status ID."
-      additionalProperties: false
+          description: Name of the policy engine that performed the evaluation or enforcement action
+          example: "OPA"
+        policyRuleId:
+          type: string
+          description: Unique identifier for the policy rule being evaluated or enforced
+          example: "deny-root-user"
       required:
-        - title
+        - policyEngineName
+        - policyRuleId
 
-# Inspired by: https://schema.ocsf.io/1.5.0/objects/compliance
     Compliance:
       type: object
-      title: "Compliance"
-      description: "Compliance details from OCSF Security Control Profile."
+      title: "Compliance Metadata"
+      description: "Compliance metadata including control mappings, framework requirements, and risk assessments. Contains static metadata that can be cached."
       properties:
-        catalog:
-          type: string
-          description: "Benchmark or Security Control Catalog id"
         control:
+          $ref: '#/components/schemas/ComplianceControl'
+        frameworks:
+          $ref: '#/components/schemas/ComplianceFrameworks'
+        risk:
+          $ref: '#/components/schemas/ComplianceRisk'
+        enrichmentStatus:
           type: string
-          description: "The Security Control being evaluated"
+          description: "Status of the compliance enrichment process: success, unmapped, partial, or unknown."
+          enum: ["success", "unmapped", "partial", "unknown"]
+          example: "success"
+      additionalProperties: false
+      required:
+        - control
+        - frameworks
+        - enrichmentStatus
+
+    ComplianceControl:
+      type: object
+      description: "Security control metadata including identification, categorization, and remediation guidance"
+      properties:
+        id:
+          type: string
+          description: Unique identifier for the security control being assessed
+          example: "OSPS-QA-07.01"
         category:
           type: string
-          description: "The category a control framework pertains"
+          description: Category or family that the security control belongs to
+          example: "Access Control"
+        catalogId:
+          type: string
+          description: Unique identifier for the security control catalog or framework
+          example: "OSPS-B"
+        applicability:
+          type: array
+          items:
+            type: string
+          description: Environments or contexts where this control applies
+          example: ["Production", "Staging"]
+        remediationDescription:
+          type: string
+          description: Description of the recommended remediation strategy for this control
+          example: "Remove root user access and implement proper IAM policies"
+      required:
+        - id
+        - catalogId
+        - category
+
+    # Compliance Frameworks Schema
+    ComplianceFrameworks:
+      type: object
+      description: "Compliance framework and requirement information"
+      properties:
+        frameworks:
+          type: array
+          items:
+            type: string
+          description: Regulatory or industry standards being evaluated for compliance
+          example: ["NIST-800-53", "SOC-2"]
         requirements:
           type: array
           items:
             type: string
-          description: "Assessment requirements Id"
-        standards:
-          type: array
-          items:
-            type: string
-          description: "List of impacted compliance standards"
-        remediation:
-          type: string
-          description: "Optional remediation information"
-      additionalProperties: false
+          description: Compliance requirement identifiers from the frameworks being evaluated
+          example: ["AC-1", "CC6.1"]
       required:
-        - control
-        - catalog
-        - standards
+        - frameworks
         - requirements
-        - category
 
-    ThreatMapping:
+    # Compliance Risk Schema
+    ComplianceRisk:
       type: object
-      description: "A mapping to an external security framework, like MITRE ATT&CK."
+      description: "Compliance risk assessment information"
       properties:
-        referenceId:
+        level:
           type: string
-          description: "The name of the external reference (e.g., MITRE-ATT&CK)."
-        identifiers:
-          type: array
-          items:
-            $ref: '#/components/schemas/ThreatIdentifier'
+          enum: ["Critical", "High", "Medium", "Low", "Informational"]
+          description: Risk level associated with non-compliance
+          example: "High"
       required:
-        - referenceId
-        - identifiers
-
-    ThreatIdentifier:
-      type: object
-      description: "A specific threat technique or sub-technique."
-      properties:
-        id:
-          type: string
-          description: "The MITRE ID (e.g., T1059.004)."
-        name:
-          type: string
-          description: "The name of the technique."
-        url:
-          type: string
-          description: "The URL to the technique's page for more information."
-      required:
-        - id
-        - name
-        - url
+        - level
 
     Error:
+      type: object
       required:
         - code
         - message
@@ -205,13 +184,8 @@ components:
         code:
           type: integer
           format: int32
-          description: Error code
+          description: HTTP status code
+          example: 400
         message:
           type: string
           description: Error message
-
-#  securitySchemes:
-#    BearerAuth:
-#      type: http
-#      scheme: bearer
-#      bearerFormat: JWT

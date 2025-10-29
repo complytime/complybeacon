@@ -22,17 +22,21 @@ processors:
         conditions:
           - body != nil and Substring(body, 0, 2) == "{\""
         statements:
-          - merge_maps(cache, ParseJSON(body), "upsert")
-          - set(attributes["policy.id"], cache["policy"]["uid"])
-          - set(attributes["policy.evaluation.status"], cache["status"])
-          - set(attributes["policy.source"], cache["metadata"]["product"]["name"])
-          - set(attributes["policy.enforcement.action"], cache["action"])
-          - set(attributes["category.id"], cache["category_uid"])
-          - set(attributes["class.id"], cache["class_uid"])
           - set(observed_time, Now()) where observed_time_unix_nano == 0
           - set(time, observed_time) where time_unix_nano == 0
-          - flatten(cache, "")
-          - merge_maps(attributes, cache, "upsert")
+          # Extract policy.rule.id from OCSF policy.uid field
+          - set(attributes["policy.rule.id"], ParseJSON(body)["policy"]["uid"]) where ParseJSON(body)["policy"]["uid"] != nil
+          # Extract policy.engine.name from OCSF metadata.product.name field
+          - set(attributes["policy.engine.name"], ParseJSON(body)["metadata"]["product"]["name"]) where ParseJSON(body)["metadata"]["product"]["name"] != nil
+          # Extract policy.evaluation.result from OCSF status field (mapped to Compass enum values)
+          - set(attributes["policy.evaluation.result"], "Passed") where ParseJSON(body)["status"] == "success"
+          - set(attributes["policy.evaluation.result"], "Failed") where ParseJSON(body)["status"] == "failure"
+          - set(attributes["policy.evaluation.result"], "Not Run") where ParseJSON(body)["status"] == "not_run"
+          - set(attributes["policy.evaluation.result"], "Needs Review") where ParseJSON(body)["status"] == "needs_review"
+          - set(attributes["policy.evaluation.result"], "Not Applicable") where ParseJSON(body)["status"] == "not_applicable"
+          - set(attributes["policy.evaluation.result"], "Unknown") where ParseJSON(body)["status"] == "unknown" or ParseJSON(body)["status"] == "error" or ParseJSON(body)["status"] == "timeout"
+          # Set default Unknown if status is not recognized
+          - set(attributes["policy.evaluation.result"], "Unknown") where ParseJSON(body)["status"] != nil and attributes["policy.evaluation.result"] == nil
 
 exporters:
   debug:

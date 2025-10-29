@@ -1,7 +1,7 @@
 package basic
 
 import (
-	"strings"
+	"log"
 
 	"github.com/ossf/gemara/layer2"
 	"github.com/ossf/gemara/layer4"
@@ -55,15 +55,18 @@ func (m *Mapper) PluginName() mapper.ID {
 	return ID
 }
 
-func (m *Mapper) Map(evidence api.RawEvidence, scope mapper.Scope) (api.Compliance, api.Status) {
-
-	// Map decision to status
-	status, statusId := m.mapDecision(evidence.Decision)
+// Map returns static compliance metadata for a policy rule
+func (m *Mapper) Map(policy api.Policy, scope mapper.Scope) api.Compliance {
+	// Track enrichment status
+	enrichmentStatus := api.Unmapped
+	var failureReasons []string
 
 	// Process each catalog
 	for catalogId, plans := range m.plans {
 		catalog, ok := scope[catalogId]
 		if !ok {
+			log.Printf("WARNING: Catalog %s not found in scope for policy %s", catalogId, policy.PolicyRuleId)
+			failureReasons = append(failureReasons, "catalog not found")
 			continue
 		}
 
@@ -74,38 +77,52 @@ func (m *Mapper) Map(evidence api.RawEvidence, scope mapper.Scope) (api.Complian
 		controlData := m.buildControlDataMap(catalog)
 
 		// Look up policy in procedures
-		if procedureInfo, ok := proceduresById[evidence.PolicyId]; ok {
+		if procedureInfo, ok := proceduresById[policy.PolicyRuleId]; ok {
 
 			// Look up control data
 			if ctrlData, ok := controlData[procedureInfo.ControlID]; ok {
-				compliance := api.Compliance{
-					Catalog:      catalogId,
-					Control:      procedureInfo.RequirementID,
-					Requirements: m.extractRequirements(ctrlData.Mappings),
-					Standards:    m.extractStandards(ctrlData.Mappings),
-					Category:     ctrlData.Category,
-					Remediation:  &procedureInfo.Documentation,
+				metadata := api.Compliance{
+					Control: api.ComplianceControl{
+						Id:                     procedureInfo.RequirementID,
+						Category:               ctrlData.Category,
+						RemediationDescription: &procedureInfo.Documentation,
+						CatalogId:              catalogId,
+					},
+					Frameworks: api.ComplianceFrameworks{
+						Requirements: m.extractRequirements(ctrlData.Mappings),
+						Frameworks:   m.extractStandards(ctrlData.Mappings),
+					},
+					EnrichmentStatus: api.Success,
 				}
 
-				return compliance, api.Status{Title: status, Id: &statusId}
+				return metadata
+			} else {
+				log.Printf("WARNING: Control data not found for control ID %s in catalog %s for policy %s", procedureInfo.ControlID, catalogId, policy.PolicyRuleId)
+				failureReasons = append(failureReasons, "control data not found")
 			}
+		} else {
+			log.Printf("WARNING: Policy rule %s not found in procedures for catalog %s", policy.PolicyRuleId, catalogId)
+			failureReasons = append(failureReasons, "policy rule not found")
 		}
 	}
 
-	return api.Compliance{}, api.Status{Title: status, Id: &statusId}
-}
+	// Log final failure if no mapping was found
+	if len(failureReasons) > 0 {
+		log.Printf("WARNING: Failed to map policy %s. Reasons: %v", policy.PolicyRuleId, failureReasons)
+	}
 
-// mapDecision maps a decision string to status and status ID.
-func (m *Mapper) mapDecision(decision string) (api.StatusTitle, api.StatusId) {
-	switch strings.ToLower(decision) {
-	case "pass", "success":
-		return api.Pass, api.N1
-	case "fail", "failure":
-		return api.Fail, api.N2
-	case "other", "warning", "unknown":
-		return api.Warning, api.N3
-	default:
-		return api.Warning, api.N3
+	// Return fallback metadata
+	return api.Compliance{
+		Control: api.ComplianceControl{
+			Id:        policy.PolicyRuleId,
+			Category:  "Unknown",
+			CatalogId: "unknown",
+		},
+		Frameworks: api.ComplianceFrameworks{
+			Requirements: []string{},
+			Frameworks:   []string{},
+		},
+		EnrichmentStatus: enrichmentStatus,
 	}
 }
 

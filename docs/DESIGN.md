@@ -23,8 +23,8 @@
 The ComplyBeacon architecture is centered around a unified enrichment pipeline that processes and enriches compliance evidence. The primary data flow begins with a source that generates OpenTelemetry-compliant logs.
 
 1.  **Log Ingestion**: A source generates compliance evidence and sends it as a structured log record to the `Beacon` collector, typically using `ProofWatch` to handle the emission. This can also be done by an OpenTelemetry collector agent.
-2.  **Enrichment Request**: The log record is received by the `Beacon` collector and forwarded to the `truthbeam` processor. `truthbeam` extracts key attributes from the record and sends an enrichment request to the `Compass` API.
-3.  **Enrichment Lookup**: The `Compass` service performs a lookup based on the provided attributes and returns a response containing compliance-related context (e.g., impacted baselines, requirements, and a compliance result).
+2.  **Metadata Request**: The log record is received by the `Beacon` collector and forwarded to the `truthbeam` processor. `truthbeam` extracts key attributes from the record and sends a metadata request to the `Compass` API.
+3.  **Metadata Lookup**: The `Compass` service performs a lookup based on the provided policy attributes and returns a response containing compliance metadata (e.g., control mappings, framework requirements, and risk assessments).
 4.  **Attribute Injection**: `truthbeam` adds these new attributes from `Compass` to the original log record.
 5.  **Export**: The now-enriched log record is exported from the `Beacon` collector to a final destination (e.g., a SIEM, logging backend, or data lake) for analysis and correlation.
 
@@ -140,6 +140,6 @@ err = pw.LogWithSeverity(ctx, evidence, olog.SeverityWarn)
 **Purpose**: A centralized lookup service that provides compliance context. It's the source of truth for mapping policies to standards and risk attributes.
 
 **Key Responsibilities**:
-* Receiving an EnrichmentRequest from `truthbeam`.
+* Receiving a MetadataRequest from `truthbeam`.
 * Performing a lookup based on the policy details.
-* Returning an EnrichmentResponse with compliance attributes.
+* Returning a MetadataResponse with compliance metadata.

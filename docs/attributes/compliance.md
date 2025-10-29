@@ -3,25 +3,24 @@
 
 # Compliance
 
-## Compliance Evidence Attributes
+## Compliance Assessment Attributes
 
-This group describes attributes specific compliance audit logs. The attributes are inspired by the OCSF Compliance Finding object.
+Attributes added by compliance assessment tools to map policy results to compliance frameworks. Provides compliance context, risk assessment, and regulatory mapping for audit and reporting. Maps to GEMARA Layer 5 (Enforcement) for Policy-as-Code workflows.
 
 | Attribute | Type | Description | Examples | Stability |
 |---|---|---|---|---|
-| <a id="compliance-audit-id" href="#compliance-audit-id">`compliance.audit.id`</a> | string | A unique identifier for a specific audit or assessment. [1] | `my_audit_id` | ![Development](https://img.shields.io/badge/-development-blue) |
-| <a id="compliance-category" href="#compliance-category">`compliance.category`</a> | string | The category a control framework pertains. | `Access Control`; `Quality` | ![Development](https://img.shields.io/badge/-development-blue) |
-| <a id="compliance-control-catalog-id" href="#compliance-control-catalog-id">`compliance.control.catalog.id`</a> | string | The unique identifier for the security control catalog. | `OSPS-B`; `CCC` | ![Development](https://img.shields.io/badge/-development-blue) |
-| <a id="compliance-control-id" href="#compliance-control-id">`compliance.control.id`</a> | string | The unique identifier for the security control. [2] | `OSPS-QA-07.01` | ![Development](https://img.shields.io/badge/-development-blue) |
-| <a id="compliance-control-remediation-description" href="#compliance-control-remediation-description">`compliance.control.remediation.description`</a> | string | The description of the remediation strategy. | `This is a short description of the remediation strategy for this control.` | ![Development](https://img.shields.io/badge/-development-blue) |
-| <a id="compliance-requirements" href="#compliance-requirements">`compliance.requirements`</a> | string[] | The identifiers specific compliance requirements being evaluated. | `["AC-1", "PS-1", "2.1"]` | ![Development](https://img.shields.io/badge/-development-blue) |
-| <a id="compliance-risk-level" href="#compliance-risk-level">`compliance.risk.level`</a> | string | The risk level associated with non-compliance. | `info`; `low`; `high`; `medium`; `critical`; `other` | ![Development](https://img.shields.io/badge/-development-blue) |
-| <a id="compliance-standards" href="#compliance-standards">`compliance.standards`</a> | string[] | The identifiers for regulatory or industry standards being evaluated for compliance. | `["800-53", "SSDF", "CRA"]` | ![Development](https://img.shields.io/badge/-development-blue) |
-| <a id="compliance-status" href="#compliance-status">`compliance.status`</a> | string | The normalized status identifier of the compliance check. | `Unknown`; `Pass`; `Warning`; `Fail`; `Other` | ![Development](https://img.shields.io/badge/-development-blue) |
-
-**[1] `compliance.audit.id`:** This aligns with a id field of a `gemara` Evaluation or Enforcement Plan. The goal to allow batching
-and correlation of a set of findings.
-
-**[2] `compliance.control.id`:** A control is a prescriptive, actionable set of 
-specifications that strengthens security and compliance posture. This value may also reference
-a specific control part.
+| <a id="compliance-assessment-id" href="#compliance-assessment-id">`compliance.assessment.id`</a> | string | Unique identifier for the compliance assessment run or session. Used to group findings from the same assessment execution. | `assessment-2024-001`; `scan-run-abc123`; `compliance-check-xyz789` | ![Development](https://img.shields.io/badge/-development-blue) |
+| <a id="compliance-control-applicability" href="#compliance-control-applicability">`compliance.control.applicability`</a> | string[] | Environments or contexts where this control applies. | `["Production", "Staging"]`; `["All Environments"]`; `["Kubernetes", "AWS"]` | ![Development](https://img.shields.io/badge/-development-blue) |
+| <a id="compliance-control-catalog-id" href="#compliance-control-catalog-id">`compliance.control.catalog.id`</a> | string | Unique identifier for the security control catalog or framework. | `OSPS-B`; `CCC`; `CIS` | ![Development](https://img.shields.io/badge/-development-blue) |
+| <a id="compliance-control-category" href="#compliance-control-category">`compliance.control.category`</a> | string | Category or family that the security control belongs to. | `Access Control`; `Quality` | ![Development](https://img.shields.io/badge/-development-blue) |
+| <a id="compliance-control-id" href="#compliance-control-id">`compliance.control.id`</a> | string | Unique identifier for the security control and assessment requirement being assessed. | `OSPS-QA-07.01` | ![Development](https://img.shields.io/badge/-development-blue) |
+| <a id="compliance-enrichment-status" href="#compliance-enrichment-status">`compliance.enrichment.status`</a> | string | Status of the compliance enrichment process: success, unmapped, partial, or unknown. | `success`; `unmapped`; `partial`; `unknown` | ![Development](https://img.shields.io/badge/-development-blue) |
+| <a id="compliance-frameworks" href="#compliance-frameworks">`compliance.frameworks`</a> | string[] | Regulatory or industry standards being evaluated for compliance. | `["NIST-800-53", "ISO-27001"]` | ![Development](https://img.shields.io/badge/-development-blue) |
+| <a id="compliance-remediation-action" href="#compliance-remediation-action">`compliance.remediation.action`</a> | string | Action taken by the policy engine: Block, Allow, Remediate, Waive, Notify, or Unknown. | `Block`; `Allow`; `Remediate`; `Waive`; `Notify`; `Unknown` | ![Development](https://img.shields.io/badge/-development-blue) |
+| <a id="compliance-remediation-description" href="#compliance-remediation-description">`compliance.remediation.description`</a> | string | Description of the recommended remediation strategy for this control. | `This is a short description of the remediation strategy for this control.` | ![Development](https://img.shields.io/badge/-development-blue) |
+| <a id="compliance-remediation-exception-active" href="#compliance-remediation-exception-active">`compliance.remediation.exception.active`</a> | boolean | Whether the exception was is active for this enforcement. | `true`; `false` | ![Development](https://img.shields.io/badge/-development-blue) |
+| <a id="compliance-remediation-exception-id" href="#compliance-remediation-exception-id">`compliance.remediation.exception.id`</a> | string | Unique identifier for the approved exception, if applicable. | `EX-2025-10-001`; `WAIVE-AC-1-001` | ![Development](https://img.shields.io/badge/-development-blue) |
+| <a id="compliance-remediation-status" href="#compliance-remediation-status">`compliance.remediation.status`</a> | string | Result of the policy enforcement action. | `Success`; `Fail`; `Skipped`; `Unknown` | ![Development](https://img.shields.io/badge/-development-blue) |
+| <a id="compliance-requirements" href="#compliance-requirements">`compliance.requirements`</a> | string[] | Compliance requirement identifiers from the frameworks impacted. | `["AC-1", "A.9.1.1"]` | ![Development](https://img.shields.io/badge/-development-blue) |
+| <a id="compliance-risk-level" href="#compliance-risk-level">`compliance.risk.level`</a> | string | Risk level associated with non-compliance: Critical, High, Medium, Low, or Informational. | `Critical`; `High`; `Medium`; `Low`; `Informational` | ![Development](https://img.shields.io/badge/-development-blue) |
+| <a id="compliance-status" href="#compliance-status">`compliance.status`</a> | string | Compliance verdict: COMPLIANT, NON_COMPLIANT, EXEMPT, NOT_APPLICABLE, or UNKNOWN. | `COMPLIANT`; `NON_COMPLIANT`; `EXEMPT`; `NOT_APPLICABLE`; `UNKNOWN` | ![Development](https://img.shields.io/badge/-development-blue) |
