@@ -3,7 +3,7 @@ package server
 import (
 	"errors"
 	"fmt"
-	"log"
+	"log/slog"
 	"os"
 	"path/filepath"
 
@@ -17,6 +17,8 @@ import (
 
 func NewScopeFromCatalogPath(catalogPath string) (mapper.Scope, error) {
 	cleanedPath := filepath.Clean(catalogPath)
+	slog.Info("loading catalog", slog.String("path", cleanedPath))
+
 	catalogData, err := os.ReadFile(cleanedPath)
 	if err != nil {
 		return nil, err
@@ -27,6 +29,10 @@ func NewScopeFromCatalogPath(catalogPath string) (mapper.Scope, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	slog.Info("catalog loaded",
+		slog.String("catalog_id", layer2Catalog.Metadata.Id),
+	)
 
 	return mapper.Scope{
 		layer2Catalog.Metadata.Id: layer2Catalog,
@@ -50,10 +56,14 @@ type PluginConfig struct {
 
 func NewMapperSet(config *Config) (mapper.Set, error) {
 	pluginSet := make(mapper.Set)
+	slog.Info("loading plugins", slog.Int("count", len(config.Plugins)))
+
 	for _, pluginConf := range config.Plugins {
 		transformerId := mapper.ID(pluginConf.Id)
 		if pluginConf.EvaluationsDir == "" {
-			log.Printf("Plugin %s has no evaluations, skipping...", transformerId)
+			slog.Info("plugin has no evaluations; skipping",
+				slog.String("plugin_id", string(transformerId)),
+			)
 			continue
 		}
 
@@ -75,6 +85,7 @@ func NewMapperSet(config *Config) (mapper.Set, error) {
 		}
 		pluginSet[transformerId] = tfmr
 	}
+	slog.Info("plugins loaded", slog.Int("count", len(pluginSet)))
 	return pluginSet, nil
 }
 
@@ -110,5 +121,12 @@ func NewMapperFromDir(pluginID mapper.ID, evaluationsPath string) (mapper.Mapper
 		}
 		return nil
 	})
-	return mpr, err
+	if err != nil {
+		return mpr, err
+	}
+	slog.Info("plugin evaluations loaded",
+		slog.String("plugin_id", string(pluginID)),
+		slog.String("dir", evaluationsPath),
+	)
+	return mpr, nil
 }

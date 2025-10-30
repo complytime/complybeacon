@@ -1,23 +1,23 @@
 package main
 
 import (
-    "flag"
-    "log/slog"
-    "os"
-    "path/filepath"
+	"flag"
+	"log/slog"
+	"os"
+	"path/filepath"
 
-    "github.com/goccy/go-yaml"
+	"github.com/goccy/go-yaml"
 
-    "github.com/complytime/complybeacon/compass/cmd/compass/server"
-    "github.com/complytime/complybeacon/compass/internal/logging"
-    compass "github.com/complytime/complybeacon/compass/service"
+	"github.com/complytime/complybeacon/compass/cmd/compass/server"
+	"github.com/complytime/complybeacon/compass/internal/logging"
+	compass "github.com/complytime/complybeacon/compass/service"
 )
 
 func main() {
 
 	var (
 		port, catalogPath, configPath string
-		logLevel                     string
+		logLevel                      string
 		skipTLS                       bool
 	)
 
@@ -74,17 +74,17 @@ func main() {
 
 	s := server.NewGinServer(service, port)
 
-    if skipTLS {
-        slog.Warn("insecure connections permitted; TLS is highly recommended for production")
-        if err := s.ListenAndServe(); err != nil {
-            slog.Error("server error", "err", err)
-            os.Exit(1)
-        }
-    } else {
-        cert, key := server.SetupTLS(s, cfg)
-        if err := s.ListenAndServeTLS(cert, key); err != nil {
-            slog.Error("server error", "err", err)
-            os.Exit(1)
-        }
-    }
+	if skipTLS {
+		slog.Warn("insecure connections permitted; TLS is highly recommended for production")
+		if err := s.ListenAndServe(); err != nil {
+			slog.Error("server error", "err", err)
+			os.Exit(1)
+		}
+	} else {
+		cert, key := server.SetupTLS(s, cfg)
+		if err := s.ListenAndServeTLS(cert, key); err != nil {
+			slog.Error("server error", "err", err)
+			os.Exit(1)
+		}
+	}
 }

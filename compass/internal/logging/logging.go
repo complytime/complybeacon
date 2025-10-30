@@ -37,5 +37,3 @@ func parseLevel(level string) (slog.Level, error) {
 		return 0, fmt.Errorf("invalid log level: %s", level)
 	}
 }
-
-
