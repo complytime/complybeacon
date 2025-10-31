@@ -10,6 +10,7 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"github.com/complytime/complybeacon/compass/api"
+	httpmw "github.com/complytime/complybeacon/compass/internal/middleware"
 	compass "github.com/complytime/complybeacon/compass/service"
 )
 
@@ -23,7 +24,9 @@ func NewGinServer(service *compass.Service, port string) *http.Server {
 	// that server names match. We don't know how this thing will be run.
 	swagger.Servers = nil
 
-	r := gin.Default()
+	r := gin.New()
+	r.Use(gin.Recovery())
+	r.Use(httpmw.RequestID(), httpmw.AccessLogger())
 
 	// Use our validation middleware to check all requests against the
 	// OpenAPI schema.
