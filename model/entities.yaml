@@ -3,22 +3,45 @@ groups:
     name: beacon.evidence
     type: entity
     stability: development
-    brief: This entity represents attributes for a complete evidence log
+    brief: This entity represents attributes for a complete evidence log from policy engines and compliance assessment tools
     attributes:
-      - ref: policy.id
-      - ref: policy.name
-      - ref: policy.source
-      - ref: policy.evaluation.status
-      - ref: policy.status.detail
-      - ref: policy.evaluation.subject.type
-      - ref: policy.evaluation.subject.id
-      - ref: policy.enforcement.status
-      - ref: compliance.status
-      - ref: compliance.audit.id
+      # Policy Engine Identity
+      - ref: policy.engine.name
+      - ref: policy.engine.version
+      - ref: policy.rule.id
+      - ref: policy.rule.name
+      - ref: policy.rule.uri
+      
+      # Policy Evaluation
+      - ref: policy.evaluation.result
+      - ref: policy.evaluation.message
+      
+      # Policy Target
+      - ref: policy.target.id
+      - ref: policy.target.name
+      - ref: policy.target.type
+      - ref: policy.target.environment
+      
+      # Compliance Control
       - ref: compliance.control.id
-      - ref: compliance.control.remediation.description
+      - ref: compliance.control.category
       - ref: compliance.control.catalog.id
+      - ref: compliance.control.applicability
+      
+      # Compliance Frameworks
+      - ref: compliance.frameworks
       - ref: compliance.requirements
-      - ref: compliance.standards
-      - ref: compliance.category
+      
+      # Compliance Verdict
+      - ref: compliance.status
       - ref: compliance.risk.level
+
+      # Compliance Remediation/Enforcement
+      - ref: compliance.remediation.action
+      - ref: compliance.remediation.status
+      - ref: compliance.remediation.description
+      - ref: compliance.remediation.exception.id
+      - ref: compliance.remediation.exception.active
+
+      - ref: compliance.assessment.id
+

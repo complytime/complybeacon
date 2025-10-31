@@ -19,12 +19,12 @@ func TestOCSFEvidenceAttributes(t *testing.T) {
 	}
 
 	// Verify policy attributes
-	assert.Equal(t, "test-policy", attrMap[POLICY_ID])
-	assert.Equal(t, "test-policy", attrMap[POLICY_NAME])
-	assert.Equal(t, "test-product", attrMap[POLICY_SOURCE])
+	assert.Equal(t, "test-policy", attrMap[POLICY_RULE_ID])
+	assert.Equal(t, "test-policy", attrMap[POLICY_RULE_NAME])
+	assert.Equal(t, "test-product", attrMap[POLICY_ENGINE_NAME])
 
 	// Verify evaluation status mapping
-	assert.Equal(t, "pass", attrMap[POLICY_EVALUATION_STATUS])
+	assert.Equal(t, "Passed", attrMap[POLICY_EVALUATION_RESULT])
 }
 
 func TestMapEvaluationStatus(t *testing.T) {
@@ -36,22 +36,22 @@ func TestMapEvaluationStatus(t *testing.T) {
 		{
 			name:     "success status",
 			status:   stringPtr("success"),
-			expected: "pass",
+			expected: "Passed",
 		},
 		{
 			name:     "failure status",
 			status:   stringPtr("failure"),
-			expected: "fail",
+			expected: "Failed",
 		},
 		{
 			name:     "unknown status",
 			status:   stringPtr("unknown"),
-			expected: "unknown",
+			expected: "Unknown",
 		},
 		{
 			name:     "nil status",
 			status:   nil,
-			expected: "error",
+			expected: "Unknown",
 		},
 	}
 
@@ -73,37 +73,37 @@ func TestMapEnforcementAction(t *testing.T) {
 		{
 			name:     "denied action",
 			actionID: int32Ptr(2),
-			expected: "block",
+			expected: "Block",
 		},
 		{
 			name:     "modified action",
 			actionID: int32Ptr(4),
-			expected: "mutate",
+			expected: "Remediate",
 		},
 		{
 			name:     "observed action",
 			actionID: int32Ptr(3),
-			expected: "audit",
+			expected: "Notify",
 		},
 		{
 			name:     "no action",
 			actionID: int32Ptr(16),
-			expected: "audit",
+			expected: "Notify",
 		},
 		{
 			name:     "logged action",
 			actionID: int32Ptr(17),
-			expected: "audit",
+			expected: "Notify",
 		},
 		{
 			name:     "nil action",
 			actionID: nil,
-			expected: "audit",
+			expected: "Notify",
 		},
 		{
 			name:     "unknown action",
 			actionID: int32Ptr(99),
-			expected: "unknown",
+			expected: "Unknown",
 		},
 	}
 
@@ -125,25 +125,25 @@ func TestMapEnforcementStatus(t *testing.T) {
 		{
 			name:     "nil action",
 			actionID: nil,
-			expected: "success",
+			expected: "Allow",
 		},
 		{
 			name:          "successful block",
 			actionID:      int32Ptr(2),
 			dispositionID: int32Ptr(2),
-			expected:      "success",
+			expected:      "Block",
 		},
 		{
 			name:          "successful correction",
 			actionID:      int32Ptr(4),
 			dispositionID: int32Ptr(11),
-			expected:      "success",
+			expected:      "Remediate",
 		},
 		{
 			name:          "failed enforcement",
 			actionID:      int32Ptr(2),
 			dispositionID: int32Ptr(1),
-			expected:      "fail",
+			expected:      "Unknown",
 		},
 	}
 
@@ -327,4 +327,42 @@ func createTestEvidence() OCSFEvidence {
 			Name: &policyName,
 		},
 	}
+}
+
+func TestOCSFEvidenceTargetAttributes(t *testing.T) {
+	scanUid := "scan-123"
+	scanType := "vulnerability"
+	policyName := "test-policy"
+	productName := "test-product"
+	status := "success"
+
+	evidence := OCSFEvidence{
+		ScanActivity: ocsf.ScanActivity{
+			Time: time.Now().UnixMilli(),
+			Metadata: ocsf.Metadata{
+				Product: ocsf.Product{
+					Name: &productName,
+				},
+			},
+			Status: &status,
+			Scan: ocsf.Scan{
+				Uid:  &scanUid,
+				Type: &scanType,
+			},
+		},
+		Policy: ocsf.Policy{
+			Uid:  &policyName,
+			Name: &policyName,
+		},
+	}
+
+	attrs := evidence.Attributes()
+	attrMap := make(map[string]interface{})
+	for _, attr := range attrs {
+		attrMap[string(attr.Key)] = attr.Value.AsInterface()
+	}
+
+	// Verify target attributes are present
+	assert.Equal(t, scanUid, attrMap[POLICY_TARGET_ID])
+	assert.Equal(t, scanType, attrMap[POLICY_TARGET_TYPE])
 }

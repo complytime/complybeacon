@@ -42,18 +42,26 @@ func (o OCSFEvidence) Attributes() []attribute.KeyValue {
 
 	attrs := []attribute.KeyValue{
 		// OCSF Standard Attributes (for interoperability)
-		attribute.Int("category_uid", int(o.CategoryUid)),
-		attribute.Int("class_uid", int(o.ClassUid)),
+		attribute.Int("ocsf.category.uid", int(o.CategoryUid)),
+		attribute.Int("ocsf.class.uid", int(o.ClassUid)),
 
-		attribute.String(POLICY_ID, stringVal(o.Policy.Uid, "unknown_policy_id")),
-		attribute.String(POLICY_NAME, stringVal(o.Policy.Name, "unknown_policy_name")),
-		attribute.String(POLICY_SOURCE, stringVal(o.Metadata.Product.Name, "unknown_source")),
+		attribute.String(POLICY_RULE_ID, stringVal(o.Policy.Uid, "unknown_policy_id")),
+		attribute.String(POLICY_RULE_NAME, stringVal(o.Policy.Name, "unknown_policy_name")),
+		attribute.String(POLICY_ENGINE_NAME, stringVal(o.Metadata.Product.Name, "unknown_source")),
 
-		attribute.String(POLICY_EVALUATION_STATUS, mapEvaluationStatus(o.Status)),
-		attribute.String(POLICY_STATUS_DETAIL, stringVal(o.Message, "")),
+		attribute.String(POLICY_EVALUATION_RESULT, mapEvaluationStatus(o.Status)),
+		attribute.String(POLICY_EVALUATION_MESSAGE, stringVal(o.Message, "")),
 
-		attribute.String(POLICY_ENFORCEMENT_ACTION, mapEnforcementAction(o.ActionID, o.DispositionID)),
-		attribute.String(POLICY_ENFORCEMENT_STATUS, mapEnforcementStatus(o.ActionID, o.DispositionID)),
+		attribute.String(COMPLIANCE_REMEDIATION_ACTION, mapEnforcementAction(o.ActionID, o.DispositionID)),
+		attribute.String(COMPLIANCE_REMEDIATION_STATUS, mapEnforcementStatus(o.ActionID, o.DispositionID)),
+	}
+
+	// Add target information if available
+	if o.Scan.Uid != nil && *o.Scan.Uid != "" {
+		attrs = append(attrs, attribute.String(POLICY_TARGET_ID, *o.Scan.Uid))
+	}
+	if o.Scan.Type != nil && *o.Scan.Type != "" {
+		attrs = append(attrs, attribute.String(POLICY_TARGET_TYPE, *o.Scan.Type))
 	}
 
 	return attrs
@@ -71,48 +79,48 @@ func stringVal(s *string, defaultValue string) string {
 // This is custom logic based on the policy engine's output.
 func mapEvaluationStatus(status *string) string {
 	if status == nil {
-		return "error"
+		return "Unknown"
 	}
 	switch *status {
 	case "success":
-		return "pass"
+		return "Passed"
 	case "failure":
-		return "fail"
+		return "Failed"
 	default:
-		return "unknown"
+		return "Unknown"
 	}
 }
 
 // mapEnforcementAction provides the core GRC logic for block/mutate/audit.
 func mapEnforcementAction(actionID *int32, dispositionID *int32) string {
 	if actionID == nil {
-		return "audit" // Default to audit if no action is specified
+		return "Notify" // Default to Notify if no action is specified
 	}
 	switch *actionID {
 	case 2: // Denied (OCSF) -> Block
-		return "block"
-	case 4: // Modified (OCSF) -> Mutate
-		return "mutate"
-	case 3, 16, 17: // Observed, No Action, Logged (OCSF) -> Audit
-		return "audit"
+		return "Block"
+	case 4: // Modified (OCSF) -> Remediate
+		return "Remediate"
+	case 3, 16, 17: // Observed, No Action, Logged (OCSF) -> Notify
+		return "Notify"
 	default:
-		return "unknown"
+		return "Unknown"
 	}
 }
 
 // mapEnforcementStatus maps OCSF dispositions to a simple success/fail for GRC.
 func mapEnforcementStatus(actionID *int32, dispositionID *int32) string {
 	if actionID == nil {
-		return "success" // Audit/no action is a successful state
+		return "Allow" // Notify/no action is a successful state
 	}
 	if *actionID == 2 && dispositionID != nil && (*dispositionID == 2 || *dispositionID == 6) { // Blocked, Dropped
-		return "success" // A successful block
+		return "Block" // A successful block
 	}
 	if *actionID == 4 && dispositionID != nil && *dispositionID == 11 { // Corrected
-		return "success"
+		return "Remediate"
 	}
 	// Default to a fail or unknown for other cases
-	return "fail"
+	return "Unknown"
 }
 
 // validateEvidenceFields performs basic validation on Evidence fields and logs warnings

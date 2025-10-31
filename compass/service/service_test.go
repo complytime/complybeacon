@@ -1,10 +1,15 @@
 package service
 
 import (
+	"encoding/json"
 	"testing"
 	"time"
 
+	"github.com/getkin/kin-openapi/openapi3"
+	"github.com/ossf/gemara/layer2"
+	"github.com/ossf/gemara/layer4"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"github.com/complytime/complybeacon/compass/api"
 	"github.com/complytime/complybeacon/compass/mapper"
@@ -23,23 +28,133 @@ func TestNewService(t *testing.T) {
 }
 
 func TestEnrich(t *testing.T) {
-	t.Run("enriches evidence with compliance data", func(t *testing.T) {
-		evidence := api.RawEvidence{
-			Id:        "test-raw-evidence",
-			Source:    "test-policy-engine",
-			PolicyId:  "AC-1",
-			Decision:  "pass",
-			Timestamp: time.Now(),
-		}
-		scope := make(mapper.Scope)
-		mapperPlugin := basic.NewBasicMapper()
+	t.Run("Enrichment with mapping", func(t *testing.T) {
+		// Load the OpenAPI spec for validation
+		swagger, err := api.GetSwagger()
+		require.NoError(t, err)
 
-		// Enrich the evidence with the basic mapper
+		// Set up a mapper with plans and catalog for successful mapping
+		mapperPlugin := basic.NewBasicMapper()
+		plans := []layer4.AssessmentPlan{
+			{
+				Control: layer4.Mapping{EntryId: "AC-1", ReferenceId: "test-catalog"},
+				Assessments: []layer4.Assessment{
+					{
+						Requirement: layer4.Mapping{EntryId: "AC-1-REQ", ReferenceId: "test-catalog"},
+						Procedures: []layer4.AssessmentProcedure{
+							{
+								Id:            "AC-1",
+								Documentation: "Test procedure documentation",
+							},
+						},
+					},
+				},
+			},
+		}
+		mapperPlugin.AddEvaluationPlan("test-catalog", plans...)
+
+		catalog := layer2.Catalog{
+			Metadata: layer2.Metadata{Id: "test-catalog"},
+			ControlFamilies: []layer2.ControlFamily{
+				{
+					Title: "Access Control",
+					Controls: []layer2.Control{
+						{
+							Id: "AC-1",
+							GuidelineMappings: []layer2.Mapping{
+								{
+									ReferenceId: "NIST-800-53",
+									Entries: []layer2.MappingEntry{
+										{ReferenceId: "AC-1"},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		}
+
+		evidence := api.Evidence{
+			PolicyEngineName:       "test-policy-engine",
+			PolicyRuleId:           "AC-1",
+			PolicyEvaluationStatus: api.EvidencePolicyEvaluationStatusPassed,
+			Timestamp:              time.Now(),
+		}
+		scope := mapper.Scope{
+			"test-catalog": catalog,
+		}
+
 		response := enrich(evidence, mapperPlugin, scope)
 
-		assert.NotEmpty(t, response)
-		assert.NotEmpty(t, response.Status)
-		assert.Equal(t, api.Pass, response.Status.Title)
-		// Compliance may be empty - expected behavior for basic mapper
+		assert.Equal(t, api.ComplianceEnrichmentStatusSuccess, response.Compliance.EnrichmentStatus)
+		assert.Equal(t, api.COMPLIANT, response.Compliance.Status)
+		assert.Equal(t, "AC-1-REQ", response.Compliance.Control.Id)
+		assert.Equal(t, "test-catalog", response.Compliance.Control.CatalogId)
+
+		err = validateEnrichmentResponse(t, response, swagger)
+		assert.NoError(t, err)
 	})
+
+	t.Run("Enrichment Unmapped", func(t *testing.T) {
+		swagger, err := api.GetSwagger()
+		require.NoError(t, err)
+
+		// Set up a mapper without plans or with empty scope to trigger unmapped response
+		mapperPlugin := basic.NewBasicMapper()
+		evidence := api.Evidence{
+			PolicyEngineName:       "test-policy-engine",
+			PolicyRuleId:           "AC-1",
+			PolicyEvaluationStatus: api.EvidencePolicyEvaluationStatusFailed,
+			Timestamp:              time.Now(),
+		}
+		scope := make(mapper.Scope)
+		response := enrich(evidence, mapperPlugin, scope)
+
+		assert.Equal(t, api.ComplianceEnrichmentStatusUnmapped, response.Compliance.EnrichmentStatus)
+		assert.Equal(t, api.UNKNOWN, response.Compliance.Status)
+		assert.Equal(t, "UNMAPPED", response.Compliance.Control.Id)
+		assert.Equal(t, "UNMAPPED", response.Compliance.Control.CatalogId)
+		assert.Equal(t, "UNCATEGORIZED", response.Compliance.Control.Category)
+
+		err = validateEnrichmentResponse(t, response, swagger)
+		assert.NoError(t, err, "Enrichment response with unmapped status should validate against OpenAPI schema")
+	})
+}
+
+// validateEnrichmentResponse validates an EnrichmentResponse against the OpenAPI schema
+func validateEnrichmentResponse(t *testing.T, response api.EnrichmentResponse, swagger *openapi3.T) error {
+	t.Helper()
+	pathItem := swagger.Paths.Find("/v1/enrich")
+	require.NotNil(t, pathItem)
+	operation := pathItem.Post
+	require.NotNil(t, operation)
+
+	responsesMap := operation.Responses.Map()
+	responseRef, ok := responsesMap["200"]
+	require.True(t, ok)
+	require.NotNil(t, responseRef)
+
+	responseValue := responseRef.Value
+	require.NotNil(t, responseValue)
+
+	content := responseValue.Content
+	require.NotNil(t, content)
+
+	mediaType := content.Get("application/json")
+	require.NotNil(t, mediaType)
+
+	schemaRef := mediaType.Schema
+	require.NotNil(t, schemaRef)
+	schema := schemaRef.Value
+	require.NotNil(t, schema)
+
+	responseJSON, err := json.Marshal(response)
+	require.NoError(t, err)
+
+	var responseBody interface{}
+	require.NoError(t, json.Unmarshal(responseJSON, &responseBody))
+	assert.NoError(t, schema.VisitJSON(responseBody))
+
+	return nil
 }

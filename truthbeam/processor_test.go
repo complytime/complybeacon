@@ -63,23 +63,24 @@ func TestProcessLogs(t *testing.T) {
 		err := json.NewDecoder(r.Body).Decode(&req)
 		require.NoError(t, err)
 
-		assert.Equal(t, "test-policy-123", req.Evidence.PolicyId)
-		assert.Equal(t, "test-source", req.Evidence.Source)
-		assert.Equal(t, "compliant", req.Evidence.Decision)
-		assert.Equal(t, "audit", req.Evidence.Action)
+		assert.Equal(t, "test-policy-123", req.Evidence.PolicyRuleId)
+		assert.Equal(t, "test-source", req.Evidence.PolicyEngineName)
+		assert.Equal(t, client.EvidencePolicyEvaluationStatus("compliant"), req.Evidence.PolicyEvaluationStatus)
 
 		response := client.EnrichmentResponse{
 			Compliance: client.Compliance{
-				Catalog:      "NIST-800-53",
-				Category:     "Access Control",
-				Control:      "AC-1",
-				Remediation:  stringPtr("Implement proper access controls"),
-				Requirements: []string{"req-1", "req-2"},
-				Standards:    []string{"NIST-800-53", "ISO-27001"},
-			},
-			Status: client.Status{
-				Id:    statusIdPtr(1),
-				Title: "Pass",
+				Control: client.ComplianceControl{
+					CatalogId:              "NIST-800-53",
+					Category:               "Access Control",
+					Id:                     "AC-1",
+					RemediationDescription: stringPtr("Implement proper access controls"),
+				},
+				Frameworks: client.ComplianceFrameworks{
+					Requirements: []string{"req-1", "req-2"},
+					Frameworks:   []string{"NIST-800-53", "ISO-27001"},
+				},
+				Status:           "Pass",
+				EnrichmentStatus: client.ComplianceEnrichmentStatusSuccess,
 			},
 		}
 
@@ -104,15 +105,15 @@ func TestProcessLogs(t *testing.T) {
 	assert.Equal(t, "Pass", attrs.AsRaw()[client.COMPLIANCE_STATUS])
 	assert.Equal(t, "AC-1", attrs.AsRaw()[client.COMPLIANCE_CONTROL_ID])
 	assert.Equal(t, "NIST-800-53", attrs.AsRaw()[client.COMPLIANCE_CONTROL_CATALOG_ID])
-	assert.Equal(t, "Access Control", attrs.AsRaw()[client.COMPLIANCE_CATEGORY])
-	assert.Equal(t, "Implement proper access controls", attrs.AsRaw()[client.COMPLIANCE_CONTROL_REMEDIATION_DESCRIPTION])
+	assert.Equal(t, "Access Control", attrs.AsRaw()[client.COMPLIANCE_CONTROL_CATEGORY])
+	assert.Equal(t, "Implement proper access controls", attrs.AsRaw()[client.COMPLIANCE_REMEDIATION_DESCRIPTION])
 
 	requirements := attrs.AsRaw()[client.COMPLIANCE_REQUIREMENTS].([]interface{})
 	assert.Len(t, requirements, 2)
 	assert.Contains(t, requirements, "req-1")
 	assert.Contains(t, requirements, "req-2")
 
-	standards := attrs.AsRaw()[client.COMPLIANCE_STANDARDS].([]interface{})
+	standards := attrs.AsRaw()[client.COMPLIANCE_FRAMEWORKS].([]interface{})
 	assert.Len(t, standards, 2)
 	assert.Contains(t, standards, "NIST-800-53")
 	assert.Contains(t, standards, "ISO-27001")
@@ -123,10 +124,9 @@ func TestProcessLogsWithMissingAttributes(t *testing.T) {
 	logs := createTestLogs()
 	logRecord := logs.ResourceLogs().At(0).ScopeLogs().At(0).LogRecords().At(0)
 
-	// Missing policy.id attribute
-	logRecord.Attributes().PutStr(client.POLICY_SOURCE, "test-source")
-	logRecord.Attributes().PutStr(client.POLICY_EVALUATION_STATUS, "compliant")
-	logRecord.Attributes().PutStr(client.POLICY_ENFORCEMENT_ACTION, "audit")
+	// Missing policy.rule.id attribute
+	logRecord.Attributes().PutStr(client.POLICY_ENGINE_NAME, "test-source")
+	logRecord.Attributes().PutStr(client.POLICY_EVALUATION_RESULT, "compliant")
 
 	ctx := context.Background()
 	result, err := processor.processLogs(ctx, logs)
@@ -164,20 +164,22 @@ func TestProcessLogsWithMixedValidAndInvalidRecords(t *testing.T) {
 		err := json.NewDecoder(r.Body).Decode(&req)
 		require.NoError(t, err)
 
-		// Only process valid records (with policy.id)
-		if req.Evidence.PolicyId == "test-policy-123" || req.Evidence.PolicyId == "test-policy-456" {
+		// Only process valid records (with policy.rule.id)
+		if req.Evidence.PolicyRuleId == "test-policy-123" || req.Evidence.PolicyRuleId == "test-policy-456" {
 			response := client.EnrichmentResponse{
 				Compliance: client.Compliance{
-					Catalog:      "NIST-800-53",
-					Category:     "Access Control",
-					Control:      "AC-1",
-					Remediation:  stringPtr("Implement proper access controls"),
-					Requirements: []string{"req-1", "req-2"},
-					Standards:    []string{"NIST-800-53"},
-				},
-				Status: client.Status{
-					Id:    statusIdPtr(1),
-					Title: "Pass",
+					Control: client.ComplianceControl{
+						CatalogId:              "NIST-800-53",
+						Category:               "Access Control",
+						Id:                     "AC-1",
+						RemediationDescription: stringPtr("Implement proper access controls"),
+					},
+					Frameworks: client.ComplianceFrameworks{
+						Requirements: []string{"req-1", "req-2"},
+						Frameworks:   []string{"NIST-800-53"},
+					},
+					Status:           "Pass",
+					EnrichmentStatus: client.ComplianceEnrichmentStatusSuccess,
 				},
 			}
 			w.Header().Set("Content-Type", "application/json")
@@ -196,24 +198,21 @@ func TestProcessLogsWithMixedValidAndInvalidRecords(t *testing.T) {
 
 	validRecord1 := scopeLogs.LogRecords().AppendEmpty()
 	validRecord1.SetTimestamp(pcommon.NewTimestampFromTime(time.Now()))
-	validRecord1.Attributes().PutStr(client.POLICY_ID, "test-policy-123")
-	validRecord1.Attributes().PutStr(client.POLICY_SOURCE, "test-source")
-	validRecord1.Attributes().PutStr(client.POLICY_EVALUATION_STATUS, "compliant")
-	validRecord1.Attributes().PutStr(client.POLICY_ENFORCEMENT_ACTION, "audit")
+	validRecord1.Attributes().PutStr(client.POLICY_RULE_ID, "test-policy-123")
+	validRecord1.Attributes().PutStr(client.POLICY_ENGINE_NAME, "test-source")
+	validRecord1.Attributes().PutStr(client.POLICY_EVALUATION_RESULT, "compliant")
 
-	// Invalid record (missing policy.id)
+	// Invalid record (missing policy.rule.id)
 	invalidRecord := scopeLogs.LogRecords().AppendEmpty()
 	invalidRecord.SetTimestamp(pcommon.NewTimestampFromTime(time.Now()))
-	invalidRecord.Attributes().PutStr(client.POLICY_SOURCE, "test-source")
-	invalidRecord.Attributes().PutStr(client.POLICY_EVALUATION_STATUS, "compliant")
-	invalidRecord.Attributes().PutStr(client.POLICY_ENFORCEMENT_ACTION, "audit")
+	invalidRecord.Attributes().PutStr(client.POLICY_ENGINE_NAME, "test-source")
+	invalidRecord.Attributes().PutStr(client.POLICY_EVALUATION_RESULT, "compliant")
 
 	validRecord2 := scopeLogs.LogRecords().AppendEmpty()
 	validRecord2.SetTimestamp(pcommon.NewTimestampFromTime(time.Now()))
-	validRecord2.Attributes().PutStr(client.POLICY_ID, "test-policy-456")
-	validRecord2.Attributes().PutStr(client.POLICY_SOURCE, "test-source")
-	validRecord2.Attributes().PutStr(client.POLICY_EVALUATION_STATUS, "compliant")
-	validRecord2.Attributes().PutStr(client.POLICY_ENFORCEMENT_ACTION, "audit")
+	validRecord2.Attributes().PutStr(client.POLICY_RULE_ID, "test-policy-456")
+	validRecord2.Attributes().PutStr(client.POLICY_ENGINE_NAME, "test-source")
+	validRecord2.Attributes().PutStr(client.POLICY_EVALUATION_RESULT, "compliant")
 
 	ctx := context.Background()
 	result, err := processor.processLogs(ctx, logs)
@@ -237,7 +236,7 @@ func TestProcessLogsWithMixedValidAndInvalidRecords(t *testing.T) {
 	assert.Nil(t, attrs2.AsRaw()[client.COMPLIANCE_CONTROL_ID])
 	assert.Nil(t, attrs2.AsRaw()[client.COMPLIANCE_CONTROL_CATALOG_ID])
 	// Original attributes should still be there
-	assert.Equal(t, "test-source", attrs2.AsRaw()[client.POLICY_SOURCE])
+	assert.Equal(t, "test-source", attrs2.AsRaw()[client.POLICY_ENGINE_NAME])
 
 	// Check valid record 2 - should be enriched
 	validRecord2Result := result.ResourceLogs().At(0).ScopeLogs().At(0).LogRecords().At(2)
@@ -275,17 +274,11 @@ func createTestLogs() plog.Logs {
 
 func setRequiredAttributes(logs plog.Logs) {
 	logRecord := logs.ResourceLogs().At(0).ScopeLogs().At(0).LogRecords().At(0)
-	logRecord.Attributes().PutStr(client.POLICY_ID, "test-policy-123")
-	logRecord.Attributes().PutStr(client.POLICY_SOURCE, "test-source")
-	logRecord.Attributes().PutStr(client.POLICY_EVALUATION_STATUS, "compliant")
-	logRecord.Attributes().PutStr(client.POLICY_ENFORCEMENT_ACTION, "audit")
+	logRecord.Attributes().PutStr(client.POLICY_RULE_ID, "test-policy-123")
+	logRecord.Attributes().PutStr(client.POLICY_ENGINE_NAME, "test-source")
+	logRecord.Attributes().PutStr(client.POLICY_EVALUATION_RESULT, "compliant")
 }
 
 func stringPtr(s string) *string {
 	return &s
-}
-
-func statusIdPtr(id int) *client.StatusId {
-	statusId := client.StatusId(id)
-	return &statusId
 }

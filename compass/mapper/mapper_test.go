@@ -21,17 +21,20 @@ func (m *mockMapper) PluginName() ID {
 	return m.id
 }
 
-func (m *mockMapper) Map(evidence api.RawEvidence, scope Scope) (api.Compliance, api.Status) {
+func (m *mockMapper) Map(evidence api.Evidence, scope Scope) api.Compliance {
 	return api.Compliance{
-			Catalog:      "test-catalog",
-			Control:      evidence.PolicyId,
-			Category:     "test-category",
+		Control: api.ComplianceControl{
+			Id:        evidence.PolicyRuleId,
+			Category:  "test-category",
+			CatalogId: "test-catalog",
+		},
+		Frameworks: api.ComplianceFrameworks{
 			Requirements: []string{"req-1"},
-			Standards:    []string{"NIST-800-53"},
-		}, api.Status{
-			Title: api.Pass,
-			Id:    &[]api.StatusId{api.N1}[0],
-		}
+			Frameworks:   []string{"NIST-800-53"},
+		},
+		Status:           api.COMPLIANT,
+		EnrichmentStatus: api.ComplianceEnrichmentStatusSuccess,
+	}
 }
 
 func (m *mockMapper) AddEvaluationPlan(catalogId string, plans ...layer4.AssessmentPlan) {
@@ -147,19 +150,18 @@ func TestMapperInterfaceAndIDType(t *testing.T) {
 
 		assert.Equal(t, ID("test-mapper"), mapper.PluginName())
 
-		evidence := api.RawEvidence{
-			Id:        "test-raw-evidence",
-			PolicyId:  "AC-1",
-			Source:    "test-policy-engine",
-			Decision:  "pass",
-			Timestamp: time.Now(),
+		evidence := api.Evidence{
+			PolicyEngineName:       "test-policy-engine",
+			PolicyRuleId:           "AC-1",
+			PolicyEvaluationStatus: api.EvidencePolicyEvaluationStatusPassed,
+			Timestamp:              time.Now(),
 		}
 		scope := make(Scope)
 
-		compliance, status := mapper.Map(evidence, scope)
-		assert.Equal(t, "test-catalog", compliance.Catalog)
-		assert.Equal(t, "AC-1", compliance.Control)
-		assert.Equal(t, api.Pass, status.Title)
+		compliance := mapper.Map(evidence, scope)
+		assert.Equal(t, "test-catalog", compliance.Control.CatalogId)
+		assert.Equal(t, "AC-1", compliance.Control.Id)
+		assert.Equal(t, api.COMPLIANT, compliance.Status)
 
 		plans := []layer4.AssessmentPlan{
 			{Control: layer4.Mapping{ReferenceId: "AC-1"}},

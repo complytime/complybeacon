@@ -2,71 +2,81 @@
 
 package proofwatch
 
-// A unique identifier for a specific audit or assessment.
-//
-// Notes:
-// This aligns with a id field of a `gemara` Evaluation or Enforcement Plan. The goal to allow batching
-// and correlation of a set of findings
-const COMPLIANCE_AUDIT_ID = "compliance.audit.id"
+// Unique identifier for the compliance assessment run or session. Used to group findings from the same assessment execution
+const COMPLIANCE_ASSESSMENT_ID = "compliance.assessment.id"
 
-// The category a control framework pertains
-const COMPLIANCE_CATEGORY = "compliance.category"
+// Environments or contexts where this control applies
+const COMPLIANCE_CONTROL_APPLICABILITY = "compliance.control.applicability"
 
-// The unique identifier for the security control catalog
+// Unique identifier for the security control catalog or framework
 const COMPLIANCE_CONTROL_CATALOG_ID = "compliance.control.catalog.id"
 
-// The unique identifier for the security control.
-//
-// Notes:
-// A control is a prescriptive, actionable set of
-// specifications that strengthens security and compliance posture. This value may also reference
-// a specific control part
+// Category or family that the security control belongs to
+const COMPLIANCE_CONTROL_CATEGORY = "compliance.control.category"
+
+// Unique identifier for the security control and assessment requirement being assessed
 const COMPLIANCE_CONTROL_ID = "compliance.control.id"
 
-// The description of the remediation strategy
-const COMPLIANCE_CONTROL_REMEDIATION_DESCRIPTION = "compliance.control.remediation.description"
+// Status of the compliance enrichment process: success, unmapped, partial, or unknown
+const COMPLIANCE_ENRICHMENT_STATUS = "compliance.enrichment.status"
 
-// The identifiers specific compliance requirements being evaluated
+// Regulatory or industry standards being evaluated for compliance
+const COMPLIANCE_FRAMEWORKS = "compliance.frameworks"
+
+// Action taken by the policy engine: Block, Allow, Remediate, Waive, Notify, or Unknown
+const COMPLIANCE_REMEDIATION_ACTION = "compliance.remediation.action"
+
+// Description of the recommended remediation strategy for this control
+const COMPLIANCE_REMEDIATION_DESCRIPTION = "compliance.remediation.description"
+
+// Whether the exception was is active for this enforcement
+const COMPLIANCE_REMEDIATION_EXCEPTION_ACTIVE = "compliance.remediation.exception.active"
+
+// Unique identifier for the approved exception, if applicable
+const COMPLIANCE_REMEDIATION_EXCEPTION_ID = "compliance.remediation.exception.id"
+
+// Result of the policy enforcement action
+const COMPLIANCE_REMEDIATION_STATUS = "compliance.remediation.status"
+
+// Compliance requirement identifiers from the frameworks impacted
 const COMPLIANCE_REQUIREMENTS = "compliance.requirements"
 
-// The risk level associated with non-compliance
+// Risk level associated with non-compliance: Critical, High, Medium, Low, or Informational
 const COMPLIANCE_RISK_LEVEL = "compliance.risk.level"
 
-// The identifiers for regulatory or industry standards being evaluated for compliance
-const COMPLIANCE_STANDARDS = "compliance.standards"
-
-// The normalized status identifier of the compliance check
+// Compliance verdict: COMPLIANT, NON_COMPLIANT, EXEMPT, NOT_APPLICABLE, or UNKNOWN
 const COMPLIANCE_STATUS = "compliance.status"
 
-// The action take by the policy enforcement
-const POLICY_ENFORCEMENT_ACTION = "policy.enforcement.action"
+// Name of the policy engine that performed the evaluation or enforcement action
+const POLICY_ENGINE_NAME = "policy.engine.name"
 
-// The outcome of the policy enforcement.
-//
-// Notes:
-// This is required if the policy enforcement action is not "audit"
-const POLICY_ENFORCEMENT_STATUS = "policy.enforcement.status"
+// Version of the policy engine
+const POLICY_ENGINE_VERSION = "policy.engine.version"
 
-// The outcome of the policy evaluation (e.g., "deny", "allow")
-const POLICY_EVALUATION_STATUS = "policy.evaluation.status"
+// Additional context about the policy evaluation result
+const POLICY_EVALUATION_MESSAGE = "policy.evaluation.message"
 
-// The subject id or resource the policy was applied to
-const POLICY_EVALUATION_SUBJECT_ID = "policy.evaluation.subject.id"
+// Result of the policy evaluation: Not Run, Passed, Failed, Needs Review, Not Applicable, or Unknown
+const POLICY_EVALUATION_RESULT = "policy.evaluation.result"
 
-// The subject type or resource the policy was applied to
-const POLICY_EVALUATION_SUBJECT_TYPE = "policy.evaluation.subject.type"
+// Unique identifier for the policy rule being evaluated or enforced
+const POLICY_RULE_ID = "policy.rule.id"
 
-// The identifier for the policy that was applied
-const POLICY_ID = "policy.id"
+// Human-readable name of the policy rule
+const POLICY_RULE_NAME = "policy.rule.name"
 
-// The human-readable name of the policy
-const POLICY_NAME = "policy.name"
+// Source control URL and version of the policy-as-code file for auditability
+const POLICY_RULE_URI = "policy.rule.uri"
 
-// The identifier for the source of the policy audit log.
-//
-// Notes:
-// This should identify the policy engine or assessment tool
-const POLICY_SOURCE = "policy.source"
+// Environment where the target resource or entity exists
+const POLICY_TARGET_ENVIRONMENT = "policy.target.environment"
 
-// Add contextual details around the policy status
-const POLICY_STATUS_DETAIL = "policy.status.detail"
+// Unique identifier for the resource or entity being evaluated or enforced against
+const POLICY_TARGET_ID = "policy.target.id"
+
+// Human-readable name of the resource or entity being evaluated or enforced against
+const POLICY_TARGET_NAME = "policy.target.name"
+
+// Type of the resource or entity being evaluated or enforced against
+const POLICY_TARGET_TYPE = "policy.target.type"
+

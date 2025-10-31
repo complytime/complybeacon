@@ -1,7 +1,7 @@
 package basic
 
 import (
-	"strings"
+	"log"
 
 	"github.com/ossf/gemara/layer2"
 	"github.com/ossf/gemara/layer4"
@@ -55,15 +55,21 @@ func (m *Mapper) PluginName() mapper.ID {
 	return ID
 }
 
-func (m *Mapper) Map(evidence api.RawEvidence, scope mapper.Scope) (api.Compliance, api.Status) {
+func (m *Mapper) Map(evidence api.Evidence, scope mapper.Scope) api.Compliance {
 
 	// Map decision to status
-	status, statusId := m.mapDecision(evidence.Decision)
+	status := m.mapDecision(evidence.PolicyEvaluationStatus)
+
+	// Track enrichment status
+	enrichmentStatus := api.ComplianceEnrichmentStatusUnmapped
+	var failureReasons []string
 
 	// Process each catalog
 	for catalogId, plans := range m.plans {
 		catalog, ok := scope[catalogId]
 		if !ok {
+			log.Printf("WARNING: Catalog %s not found in scope for policy %s", catalogId, evidence.PolicyRuleId)
+			failureReasons = append(failureReasons, "catalog not found")
 			continue
 		}
 
@@ -74,38 +80,67 @@ func (m *Mapper) Map(evidence api.RawEvidence, scope mapper.Scope) (api.Complian
 		controlData := m.buildControlDataMap(catalog)
 
 		// Look up policy in procedures
-		if procedureInfo, ok := proceduresById[evidence.PolicyId]; ok {
+		if procedureInfo, ok := proceduresById[evidence.PolicyRuleId]; ok {
 
 			// Look up control data
 			if ctrlData, ok := controlData[procedureInfo.ControlID]; ok {
 				compliance := api.Compliance{
-					Catalog:      catalogId,
-					Control:      procedureInfo.RequirementID,
-					Requirements: m.extractRequirements(ctrlData.Mappings),
-					Standards:    m.extractStandards(ctrlData.Mappings),
-					Category:     ctrlData.Category,
-					Remediation:  &procedureInfo.Documentation,
+					Control: api.ComplianceControl{
+						Id:                     procedureInfo.RequirementID,
+						Category:               ctrlData.Category,
+						RemediationDescription: &procedureInfo.Documentation,
+						CatalogId:              catalogId,
+					},
+					Frameworks: api.ComplianceFrameworks{
+						Requirements: m.extractRequirements(ctrlData.Mappings),
+						Frameworks:   m.extractStandards(ctrlData.Mappings),
+					},
+					Status:           status,
+					EnrichmentStatus: api.ComplianceEnrichmentStatusSuccess,
 				}
 
-				return compliance, api.Status{Title: status, Id: &statusId}
+				return compliance
+			} else {
+				log.Printf("WARNING: Control data not found for control ID %s in catalog %s for policy %s", procedureInfo.ControlID, catalogId, evidence.PolicyRuleId)
+				failureReasons = append(failureReasons, "control data not found")
 			}
+		} else {
+			log.Printf("WARNING: Policy rule %s not found in procedures for catalog %s", evidence.PolicyRuleId, catalogId)
+			failureReasons = append(failureReasons, "policy rule not found")
 		}
 	}
 
-	return api.Compliance{}, api.Status{Title: status, Id: &statusId}
+	// Log final failure if no mapping was found
+	if len(failureReasons) > 0 {
+		log.Printf("WARNING: Failed to map policy %s from engine %s. Reasons: %v", evidence.PolicyRuleId, evidence.PolicyEngineName, failureReasons)
+	}
+
+	return api.Compliance{
+		Status: api.UNKNOWN,
+		Control: api.ComplianceControl{
+			Id:        "UNMAPPED",
+			CatalogId: "UNMAPPED",
+			Category:  "UNCATEGORIZED",
+		},
+		EnrichmentStatus: enrichmentStatus,
+		Frameworks: api.ComplianceFrameworks{
+			Frameworks:   []string{},
+			Requirements: []string{},
+		},
+	}
 }
 
 // mapDecision maps a decision string to status and status ID.
-func (m *Mapper) mapDecision(decision string) (api.StatusTitle, api.StatusId) {
-	switch strings.ToLower(decision) {
-	case "pass", "success":
-		return api.Pass, api.N1
-	case "fail", "failure":
-		return api.Fail, api.N2
-	case "other", "warning", "unknown":
-		return api.Warning, api.N3
+func (m *Mapper) mapDecision(status api.EvidencePolicyEvaluationStatus) api.ComplianceStatus {
+	switch status {
+	case api.EvidencePolicyEvaluationStatusPassed:
+		return api.COMPLIANT
+	case api.EvidencePolicyEvaluationStatusFailed:
+		return api.NONCOMPLIANT
+	case api.EvidencePolicyEvaluationStatusNotRun, api.EvidencePolicyEvaluationStatusNotApplicable:
+		return api.NOTAPPLICABLE
 	default:
-		return api.Warning, api.N3
+		return api.UNKNOWN
 	}
 }
 
