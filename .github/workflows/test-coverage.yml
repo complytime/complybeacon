@@ -1,5 +1,16 @@
 ---
-name: sonarcloud
+# Test coverage workflow for ComplyBeacon
+# Runs tests with coverage for all modules and enforces a
+# minimum coverage threshold. Also runs SonarCloud analysis to
+# check code quality and compliance.
+#
+# Features:
+# - Tests all modules with coverage
+# - Merges coverage profiles from all modules
+# - Enforces minimum coverage threshold
+# - Runs SonarCloud analysis for code quality and compliance
+
+name: test-coverage
 
 on:
   push:
@@ -58,20 +69,22 @@ jobs:
       - name: Generate coverage
         run: |
           set -euxo pipefail
-          modules=$(git ls-files '**/go.mod' | grep -v '^vendor/' | sed 's#/go\.mod##' || true)
-          
+          modules=$(git ls-files '**/go.mod' \
+            | grep -v '^vendor/' | sed 's#/go\.mod##' || true)
+
           echo "Cleaning up existing coverage files..."
           for m in $modules; do
             (cd "$m" && rm -f coverage.out)
           done
-          rm -f coverage.out 
-          
+          rm -f coverage.out
+
           # Generate coverage
           for m in $modules; do
             (
               cd "$m"
               echo "--- generating coverage for module: $m"
-              if ! go test -v -covermode=atomic -coverprofile=coverage.out ./...; then
+              if ! go test -v -covermode=atomic \
+                  -coverprofile=coverage.out ./...; then
                 echo "--- ERROR: go test failed for module: $m"
                 exit 1
               fi
@@ -80,16 +93,84 @@ jobs:
           done
           echo "$(go env GOPATH)/bin" >> "$GITHUB_PATH"
           go install github.com/wadey/gocovmerge@latest
-          covs=$(find $modules -maxdepth 1 -type f -name coverage.out -print)
+          # shellcheck disable=SC2086
+          covs=$(find $modules -maxdepth 1 -type f \
+            -name coverage.out -print)
           if [ -z "$covs" ]; then
             echo "No coverage files found; creating empty coverage.out"
             echo "mode: atomic" > coverage.out
           else
             # shellcheck disable=SC2086
             gocovmerge $covs > coverage.out
-            # Quick summary
-            go tool cover -func=coverage.out | tail -n1 || true
+            echo "Coverage file: coverage.out"
+
+            # Calculate coverage from merged file (including ALL code)
+            # Format: path:lines num_statements execution_count
+            pct_all=$(awk '
+              /^mode:/ { next }
+              {
+                statements += $2
+                if ($3 > 0) covered += $2
+              }
+              END {
+                if (statements > 0) {
+                  coverage = 100.0 * covered / statements
+                  printf "%.1f", coverage
+                } else {
+                  print "0.0"
+                }
+              }
+            ' coverage.out)
+            echo "Total coverage (all code): $pct_all%"
+
+            # Calculate coverage with exclusions (matching SonarCloud)
+            # Exclude: *_test.go, cmd/, *.gen.go files
+            pct=$(awk '
+              /^mode:/ { next }
+              # Skip lines matching exclusion patterns
+              /_test\.go:/ { next }
+              /\/cmd\/.*\.go:/ { next }
+              /\.gen\.go:/ { next }
+              {
+                statements += $2
+                if ($3 > 0) covered += $2
+              }
+              END {
+                if (statements > 0) {
+                  coverage = 100.0 * covered / statements
+                  printf "%.1f", coverage
+                } else {
+                  print "0.0"
+                }
+              }
+            ' coverage.out)
+
+            if [ -z "$pct" ]; then
+              echo "No coverage calculated; treating as 0%."
+              echo "COVERAGE_PCT=0" >> "$GITHUB_ENV"
+            else
+              echo "COVERAGE_PCT=$pct" >> "$GITHUB_ENV"
+              echo "Coverage with exclusions (matching SonarCloud): $pct%"
+            fi
           fi
+
+      - name: Enforce coverage threshold
+        continue-on-error: true
+        env:
+          MIN_COVERAGE: "60.0"
+        run: |
+          awk -v cov="$COVERAGE_PCT" -v min="$MIN_COVERAGE" '
+            BEGIN {
+              printf "Total coverage: %.2f%% (minimum required: " \
+                "%.2f%%)\n", cov, min;
+              if (cov+0 < min+0) {
+                printf "Coverage below threshold.\n";
+                exit 1
+              }
+              else {
+                printf "Coverage meets threshold.\n"
+              }
+            }'
 
       - name: Sonar Scan
         continue-on-error: true
