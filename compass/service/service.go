@@ -14,15 +14,17 @@ import (
 
 // Service struct to hold dependencies if needed
 type Service struct {
-	set   mapper.Set
-	scope mapper.Scope
+	set     mapper.Set
+	scope   mapper.Scope
+	version string
 }
 
 // NewService initializes a new Service instance.
 func NewService(transformers mapper.Set, scope mapper.Scope) *Service {
 	return &Service{
-		set:   transformers,
-		scope: scope,
+		set:     transformers,
+		scope:   scope,
+		version: "1.0.0",
 	}
 }
 
@@ -36,13 +38,16 @@ func (s *Service) PostV1Enrich(c *gin.Context) {
 		return
 	}
 
-	mapperPlugin, ok := s.set[mapper.ID(req.Evidence.PolicyEngineName)]
+	mapperPlugin, ok := s.set[mapper.ID(req.Policy.PolicyEngineName)]
 	if !ok {
 		// Use fallback
-		log.Printf("WARNING: Policy engine %s not found in mapper set, using basic mapper fallback", req.Evidence.PolicyEngineName)
+		log.Printf("WARNING: Policy engine %s not found in mapper set, using basic mapper fallback", req.Policy.PolicyEngineName)
 		mapperPlugin = basic.NewBasicMapper()
 	}
-	enrichedResponse := enrich(req.Evidence, mapperPlugin, s.scope)
+	compliance := mapperPlugin.Map(req.Policy, s.scope)
+	enrichedResponse := api.EnrichmentResponse{
+		Compliance: compliance,
+	}
 
 	c.JSON(http.StatusOK, enrichedResponse)
 }
@@ -55,12 +60,4 @@ func sendCompassError(c *gin.Context, code int32, message string) {
 		Message: message,
 	}
 	c.JSON(int(code), compassErr)
-}
-
-// Enrich the raw evidence with risk attributes based on `gemara` semantics.
-func enrich(rawEnv api.Evidence, attributeMapper mapper.Mapper, scope mapper.Scope) api.EnrichmentResponse {
-	compliance := attributeMapper.Map(rawEnv, scope)
-	return api.EnrichmentResponse{
-		Compliance: compliance,
-	}
 }

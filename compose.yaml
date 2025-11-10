@@ -38,7 +38,6 @@ services:
         /run.sh
 
   compass:
-    image: ghcr.io/complytime/complybeacon-compass:latest
     build:
       context: .
       dockerfile: ./compass/images/Containerfile.compass
@@ -54,7 +53,6 @@ services:
       - "8081:8081"
 
   collector:
-    image: ghcr.io/complytime/complybeacon-beacon-distro:latest
     build:
       context: ./beacon-distro
       dockerfile: Containerfile.collector

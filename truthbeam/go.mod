@@ -1,13 +1,14 @@
 module github.com/complytime/complybeacon/truthbeam
 
-go 1.24.5
+go 1.24.0
 
 tool github.com/oapi-codegen/oapi-codegen/v2/cmd/oapi-codegen
 
 require (
-	github.com/stretchr/testify v1.10.0
+	github.com/ossf/gemara v0.12.1
+	github.com/patrickmn/go-cache v2.1.0+incompatible
+	github.com/stretchr/testify v1.11.1
 	go.opentelemetry.io/collector/component v1.37.0
-	go.opentelemetry.io/collector/component/componenttest v0.131.0
 	go.opentelemetry.io/collector/config/configcompression v1.37.0
 	go.opentelemetry.io/collector/config/confighttp v0.131.0
 	go.opentelemetry.io/collector/consumer v1.37.0
@@ -61,6 +62,7 @@ require (
 	go.opentelemetry.io/auto/sdk v1.1.0 // indirect
 	go.opentelemetry.io/collector/client v1.37.0 // indirect
 	go.opentelemetry.io/collector/component/componentstatus v0.131.0 // indirect
+	go.opentelemetry.io/collector/component/componenttest v0.131.0 // indirect
 	go.opentelemetry.io/collector/config/configauth v0.131.0 // indirect
 	go.opentelemetry.io/collector/config/configmiddleware v0.131.0 // indirect
 	go.opentelemetry.io/collector/config/configopaque v1.37.0 // indirect
