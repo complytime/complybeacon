@@ -188,7 +188,7 @@ func TestApplyAttributes_ServerResponses(t *testing.T) {
 				response := EnrichmentResponse{
 					Compliance: Compliance{
 						EnrichmentStatus: ComplianceEnrichmentStatusUnknown,
-						Status:           UNKNOWN,
+						Status:           ComplianceStatusUnknown,
 						Control: ComplianceControl{
 							Id:        "Unknown",
 							Category:  "Unknown",

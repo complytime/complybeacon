@@ -43,11 +43,35 @@ groups:
           ["github.com/org/policy-repo/b8a7c2e", "gitlab.com/company/policies@v1.2.3"]
         requirement_level: recommended
       - id: policy.evaluation.result
-        type: string
+        type:
+          members:
+            - id: "Not Run"
+              value: "Not Run"
+              brief: Policy evaluation was not run
+              stability: development
+            - id: "Passed"
+              value: "Passed"
+              brief: Policy evaluation passed
+              stability: development
+            - id: "Failed"
+              value: "Failed"
+              brief: Policy evaluation failed
+              stability: development
+            - id: "Needs Review"
+              value: "Needs Review"
+              brief: Policy evaluation needs manual review
+              stability: development
+            - id: "Not Applicable"
+              value: "Not Applicable"
+              brief: Policy evaluation is not applicable
+              stability: development
+            - id: "Unknown"
+              value: "Unknown"
+              brief: Policy evaluation result is unknown
+              stability: development
         stability: development
         brief: >
           Result of the policy evaluation: Not Run, Passed, Failed, Needs Review, Not Applicable, or Unknown.
-        examples: [ "Not Run", "Passed", "Failed", "Needs Review", "Not Applicable", "Unknown" ]
         requirement_level: required
       - id: policy.evaluation.message
         type: string
@@ -140,32 +164,112 @@ groups:
         examples: [ [ "AC-1", "A.9.1.1" ]]
         requirement_level: recommended
       - id: compliance.status
-        type: string
+        type:
+          members:
+            - id: "Compliant"
+              value: "Compliant"
+              brief: Resource is compliant
+              stability: development
+            - id: "Non-Compliant"
+              value: "Non-Compliant"
+              brief: Resource is non-compliant
+              stability: development
+            - id: "Exempt"
+              value: "Exempt"
+              brief: Resource is exempt from compliance requirement
+              stability: development
+            - id: "Not Applicable"
+              value: "Not Applicable"
+              brief: Compliance requirement is not applicable
+              stability: development
+            - id: "Unknown"
+              value: "Unknown"
+              brief: Compliance status is unknown
+              stability: development
         stability: development
         brief: >
-          Compliance verdict: COMPLIANT, NON_COMPLIANT, EXEMPT, NOT_APPLICABLE, or UNKNOWN.
-        examples: [ "COMPLIANT", "NON_COMPLIANT", "EXEMPT", "NOT_APPLICABLE", "UNKNOWN" ]
+          Compliance verdict: Compliant, Non-Compliant, Exempt, Not Applicable, or Unknown.
         requirement_level: required
       - id: compliance.risk.level
-        type: string
+        type:
+          members:
+            - id: "Critical"
+              value: "Critical"
+              brief: Critical risk level
+              stability: development
+            - id: "High"
+              value: "High"
+              brief: High risk level
+              stability: development
+            - id: "Medium"
+              value: "Medium"
+              brief: Medium risk level
+              stability: development
+            - id: "Low"
+              value: "Low"
+              brief: Low risk level
+              stability: development
+            - id: "Informational"
+              value: "Informational"
+              brief: Informational risk level
+              stability: development
         stability: development
         brief: >
           Risk level associated with non-compliance: Critical, High, Medium, Low, or Informational.
-        examples: [ "Critical", "High", "Medium", "Low", "Informational" ]
         requirement_level: opt_in
       - id: compliance.remediation.action
-        type: string
+        type:
+          members:
+            - id: "Block"
+              value: "Block"
+              brief: Block the action
+              stability: development
+            - id: "Allow"
+              value: "Allow"
+              brief: Allow the action
+              stability: development
+            - id: "Remediate"
+              value: "Remediate"
+              brief: Remediate the issue
+              stability: development
+            - id: "Waive"
+              value: "Waive"
+              brief: Waive the requirement
+              stability: development
+            - id: "Notify"
+              value: "Notify"
+              brief: Notify about the issue
+              stability: development
+            - id: "Unknown"
+              value: "Unknown"
+              brief: Unknown remediation action
+              stability: development
         stability: development
         brief: >
           Action taken by the policy engine: Block, Allow, Remediate, Waive, Notify, or Unknown.
-        examples: [ "Block", "Allow", "Remediate", "Waive", "Notify", "Unknown" ]
         requirement_level: opt_in
       - id: compliance.remediation.status
-        type: string
+        type:
+          members:
+            - id: "Success"
+              value: "Success"
+              brief: Remediation was successful
+              stability: development
+            - id: "Fail"
+              value: "Fail"
+              brief: Remediation failed
+              stability: development
+            - id: "Skipped"
+              value: "Skipped"
+              brief: Remediation was skipped
+              stability: development
+            - id: "Unknown"
+              value: "Unknown"
+              brief: Remediation status is unknown
+              stability: development
         stability: development
         brief: >
           Result of the policy enforcement action.
-        examples: [ "Success", "Fail", "Skipped", "Unknown" ]
         requirement_level: opt_in
       - id: compliance.remediation.exception.id
         type: string
@@ -178,7 +282,7 @@ groups:
         type: boolean
         stability: development
         brief: >
-          Whether the exception was is active for this enforcement.
+          Whether the exception is active for this enforcement.
         examples: [ true, false ]
         requirement_level: opt_in
       - id: compliance.remediation.description
@@ -200,9 +304,29 @@ groups:
         examples: [ "assessment-2024-001", "scan-run-abc123", "compliance-check-xyz789" ]
         requirement_level: recommended
       - id: compliance.enrichment.status
-        type: string
+        type:
+          members:
+            - id: "Success"
+              value: "Success"
+              brief: Enrichment was successful
+              stability: development
+            - id: "Unmapped"
+              value: "Unmapped"
+              brief: Enrichment could not be mapped
+              stability: development
+            - id: "Partial"
+              value: "Partial"
+              brief: Partial enrichment completed
+              stability: development
+            - id: "Unknown"
+              value: "Unknown"
+              brief: Enrichment status is unknown
+              stability: development
+            - id: "Skipped"
+              value: "Skipped"
+              brief: Enrichment was skipped
+              stability: development
         stability: development
         brief: >
-          Status of the compliance enrichment process: success, unmapped, partial, or unknown.
-        examples: ["success", "unmapped", "partial", "unknown"]
+          Status of the compliance enrichment process: Success, Unmapped, Partial, Unknown, or Skipped.
         requirement_level: required

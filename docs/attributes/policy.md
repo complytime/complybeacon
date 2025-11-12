@@ -12,7 +12,7 @@ Attributes emitted by policy engines (OPA, Gatekeeper, etc.) during policy evalu
 | <a id="policy-engine-name" href="#policy-engine-name">`policy.engine.name`</a> | string | Name of the policy engine that performed the evaluation or enforcement action. | `OPA`; `Gatekeeper`; `Conftest`; `Sentinel` | ![Development](https://img.shields.io/badge/-development-blue) |
 | <a id="policy-engine-version" href="#policy-engine-version">`policy.engine.version`</a> | string | Version of the policy engine. | `v3.14.0`; `v0.45.0`; `v1.2.3`; `v2.0.1` | ![Development](https://img.shields.io/badge/-development-blue) |
 | <a id="policy-evaluation-message" href="#policy-evaluation-message">`policy.evaluation.message`</a> | string | Additional context about the policy evaluation result. | `The policy evaluation failed due to a missing attribute.` | ![Development](https://img.shields.io/badge/-development-blue) |
-| <a id="policy-evaluation-result" href="#policy-evaluation-result">`policy.evaluation.result`</a> | string | Result of the policy evaluation: Not Run, Passed, Failed, Needs Review, Not Applicable, or Unknown. | `Not Run`; `Passed`; `Failed`; `Needs Review`; `Not Applicable`; `Unknown` | ![Development](https://img.shields.io/badge/-development-blue) |
+| <a id="policy-evaluation-result" href="#policy-evaluation-result">`policy.evaluation.result`</a> | string | Result of the policy evaluation: Not Run, Passed, Failed, Needs Review, Not Applicable, or Unknown. | `Not Run`; `Passed`; `Failed` | ![Development](https://img.shields.io/badge/-development-blue) |
 | <a id="policy-rule-id" href="#policy-rule-id">`policy.rule.id`</a> | string | Unique identifier for the policy rule being evaluated or enforced. | `deny-root-user`; `require-encryption`; `check-labels` | ![Development](https://img.shields.io/badge/-development-blue) |
 | <a id="policy-rule-name" href="#policy-rule-name">`policy.rule.name`</a> | string | Human-readable name of the policy rule. | `Deny Root User`; `Require Encryption`; `Check Resource Labels` | ![Development](https://img.shields.io/badge/-development-blue) |
 | <a id="policy-rule-uri" href="#policy-rule-uri">`policy.rule.uri`</a> | string | Source control URL and version of the policy-as-code file for auditability. | `github.com/org/policy-repo/b8a7c2e`; `gitlab.com/company/policies@v1.2.3` | ![Development](https://img.shields.io/badge/-development-blue) |
@@ -20,3 +20,10 @@ Attributes emitted by policy engines (OPA, Gatekeeper, etc.) during policy evalu
 | <a id="policy-target-id" href="#policy-target-id">`policy.target.id`</a> | string | Unique identifier for the resource or entity being evaluated or enforced against. | `deployment-123`; `resource-456`; `user-789` | ![Development](https://img.shields.io/badge/-development-blue) |
 | <a id="policy-target-name" href="#policy-target-name">`policy.target.name`</a> | string | Human-readable name of the resource or entity being evaluated or enforced against. | `frontend-deployment`; `s3-bucket-secrets`; `admin-user` | ![Development](https://img.shields.io/badge/-development-blue) |
 | <a id="policy-target-type" href="#policy-target-type">`policy.target.type`</a> | string | Type of the resource or entity being evaluated or enforced against. | `deployment`; `resource`; `user`; `configuration` | ![Development](https://img.shields.io/badge/-development-blue) |
+
+---
+
+`policy.evaluation.result` has the following list of well-known values. If one of them applies, then the respective value MUST be used; otherwise, a custom value MAY be used.
+
+| Value  | Description | Stability |
+|---|---|---|

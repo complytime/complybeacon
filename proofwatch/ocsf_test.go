@@ -123,25 +123,43 @@ func TestMapEnforcementStatus(t *testing.T) {
 		expected      string
 	}{
 		{
-			name:     "nil action",
+			name:     "nil action - skipped",
 			actionID: nil,
-			expected: "Allow",
+			expected: "Skipped",
 		},
 		{
 			name:          "successful block",
 			actionID:      int32Ptr(2),
 			dispositionID: int32Ptr(2),
-			expected:      "Block",
+			expected:      "Success",
+		},
+		{
+			name:          "successful block with dropped disposition",
+			actionID:      int32Ptr(2),
+			dispositionID: int32Ptr(6),
+			expected:      "Success",
 		},
 		{
 			name:          "successful correction",
 			actionID:      int32Ptr(4),
 			dispositionID: int32Ptr(11),
-			expected:      "Remediate",
+			expected:      "Success",
 		},
 		{
-			name:          "failed enforcement",
+			name:          "failed block enforcement",
 			actionID:      int32Ptr(2),
+			dispositionID: int32Ptr(1),
+			expected:      "Fail",
+		},
+		{
+			name:          "failed remediation",
+			actionID:      int32Ptr(4),
+			dispositionID: int32Ptr(1),
+			expected:      "Fail",
+		},
+		{
+			name:          "unknown action",
+			actionID:      int32Ptr(99),
 			dispositionID: int32Ptr(1),
 			expected:      "Unknown",
 		},

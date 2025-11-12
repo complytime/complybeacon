@@ -78,7 +78,7 @@ func TestEnrich(t *testing.T) {
 		evidence := api.Evidence{
 			PolicyEngineName:       "test-policy-engine",
 			PolicyRuleId:           "AC-1",
-			PolicyEvaluationStatus: api.EvidencePolicyEvaluationStatusPassed,
+			PolicyEvaluationStatus: api.Passed,
 			Timestamp:              time.Now(),
 		}
 		scope := mapper.Scope{
@@ -88,7 +88,7 @@ func TestEnrich(t *testing.T) {
 		response := enrich(evidence, mapperPlugin, scope)
 
 		assert.Equal(t, api.ComplianceEnrichmentStatusSuccess, response.Compliance.EnrichmentStatus)
-		assert.Equal(t, api.COMPLIANT, response.Compliance.Status)
+		assert.Equal(t, api.ComplianceStatusCompliant, response.Compliance.Status)
 		assert.Equal(t, "AC-1-REQ", response.Compliance.Control.Id)
 		assert.Equal(t, "test-catalog", response.Compliance.Control.CatalogId)
 
@@ -105,14 +105,14 @@ func TestEnrich(t *testing.T) {
 		evidence := api.Evidence{
 			PolicyEngineName:       "test-policy-engine",
 			PolicyRuleId:           "AC-1",
-			PolicyEvaluationStatus: api.EvidencePolicyEvaluationStatusFailed,
+			PolicyEvaluationStatus: api.Failed,
 			Timestamp:              time.Now(),
 		}
 		scope := make(mapper.Scope)
 		response := enrich(evidence, mapperPlugin, scope)
 
 		assert.Equal(t, api.ComplianceEnrichmentStatusUnmapped, response.Compliance.EnrichmentStatus)
-		assert.Equal(t, api.UNKNOWN, response.Compliance.Status)
+		assert.Equal(t, api.ComplianceStatusUnknown, response.Compliance.Status)
 		assert.Equal(t, "UNMAPPED", response.Compliance.Control.Id)
 		assert.Equal(t, "UNMAPPED", response.Compliance.Control.CatalogId)
 		assert.Equal(t, "UNCATEGORIZED", response.Compliance.Control.Category)

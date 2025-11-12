@@ -179,6 +179,29 @@ weaver-codegen: ## Generate Go code
 
 weaver-check: ## Model schema check
 	weaver registry check -r model
+.PHONY: weaver-check
+
+weaver-semantic-check: ## Validate logs against semantic conventions
+	@echo "Generating test OCSF and Gemara logs..."
+	cd proofwatch && go run -mod=readonly ./cmd/validate-logs both /tmp/test-enriched-logs.json
+	@echo "Validating with weaver live-check (development stability warnings suppressed)..."
+	@cat /tmp/test-enriched-logs.json | \
+		weaver registry live-check -r model --input-source stdin --input-format json 2>&1 | \
+		(grep -v "development.*Is not stable" || true)
+	@echo ""
+	@echo "---------------------------------------------------------------"
+	@echo "Note: Development stability warnings have been suppressed."
+	@echo "To see all advisories including development stability warnings, run:"
+	@echo "  make weaver-semantic-check-verbose"
+.PHONY: weaver-semantic-check
+
+weaver-semantic-check-verbose: ## Validate with verbose output
+	@echo "Generating test OCSF and Gemara logs..."
+	cd proofwatch && go run -mod=readonly ./cmd/validate-logs both /tmp/test-enriched-logs.json
+	@echo "Validating with weaver live-check (showing all advisories)..."
+	@cat /tmp/test-enriched-logs.json | \
+		weaver registry live-check -r model --input-source stdin --input-format json
+.PHONY: weaver-semantic-check-verbose
 # ------------------------------------------------------------------------------
 # Help Target
 # Prints a friendly help message.

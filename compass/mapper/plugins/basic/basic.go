@@ -114,7 +114,7 @@ func (m *Mapper) Map(evidence api.Evidence, scope mapper.Scope) api.Compliance {
 	}
 
 	return api.Compliance{
-		Status: api.UNKNOWN,
+		Status: api.ComplianceStatusUnknown,
 		Control: api.ComplianceControl{
 			Id:        "UNMAPPED",
 			CatalogId: "UNMAPPED",
@@ -131,14 +131,14 @@ func (m *Mapper) Map(evidence api.Evidence, scope mapper.Scope) api.Compliance {
 // mapDecision maps a decision string to status and status ID.
 func (m *Mapper) mapDecision(status api.EvidencePolicyEvaluationStatus) api.ComplianceStatus {
 	switch status {
-	case api.EvidencePolicyEvaluationStatusPassed:
-		return api.COMPLIANT
-	case api.EvidencePolicyEvaluationStatusFailed:
-		return api.NONCOMPLIANT
-	case api.EvidencePolicyEvaluationStatusNotRun, api.EvidencePolicyEvaluationStatusNotApplicable:
-		return api.NOTAPPLICABLE
+	case api.Passed:
+		return api.ComplianceStatusCompliant
+	case api.Failed:
+		return api.ComplianceStatusNonCompliant
+	case api.NotRun, api.NotApplicable:
+		return api.ComplianceStatusNotApplicable
 	default:
-		return api.UNKNOWN
+		return api.ComplianceStatusUnknown
 	}
 }
 

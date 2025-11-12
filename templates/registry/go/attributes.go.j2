@@ -15,8 +15,15 @@ package {{ params.package_name }}
             {% set safe_deprecated = attr.deprecated | replace('\n', ' ') | replace('"', '') | trim %}
             {% set full_comment = full_comment + "\n\nDeprecated: " + safe_deprecated %}
         {% endif %}
+        {% if attr.type.members %}
+            {# Enum attributes - just generate the attribute name constant #}
 {{ full_comment | comment }}
 const {{ const_name }} = "{{ attr.name }}"
+        {% else %}
+            {# Generate regular attribute constant #}
+{{ full_comment | comment }}
+const {{ const_name }} = "{{ attr.name }}"
+        {% endif %}
 
     {% endfor %}
 {% endfor %}

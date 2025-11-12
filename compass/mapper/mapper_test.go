@@ -32,7 +32,7 @@ func (m *mockMapper) Map(evidence api.Evidence, scope Scope) api.Compliance {
 			Requirements: []string{"req-1"},
 			Frameworks:   []string{"NIST-800-53"},
 		},
-		Status:           api.COMPLIANT,
+		Status:           api.ComplianceStatusCompliant,
 		EnrichmentStatus: api.ComplianceEnrichmentStatusSuccess,
 	}
 }
@@ -153,7 +153,7 @@ func TestMapperInterfaceAndIDType(t *testing.T) {
 		evidence := api.Evidence{
 			PolicyEngineName:       "test-policy-engine",
 			PolicyRuleId:           "AC-1",
-			PolicyEvaluationStatus: api.EvidencePolicyEvaluationStatusPassed,
+			PolicyEvaluationStatus: api.Passed,
 			Timestamp:              time.Now(),
 		}
 		scope := make(Scope)
@@ -161,7 +161,7 @@ func TestMapperInterfaceAndIDType(t *testing.T) {
 		compliance := mapper.Map(evidence, scope)
 		assert.Equal(t, "test-catalog", compliance.Control.CatalogId)
 		assert.Equal(t, "AC-1", compliance.Control.Id)
-		assert.Equal(t, api.COMPLIANT, compliance.Status)
+		assert.Equal(t, api.ComplianceStatusCompliant, compliance.Status)
 
 		plans := []layer4.AssessmentPlan{
 			{Control: layer4.Mapping{ReferenceId: "AC-1"}},

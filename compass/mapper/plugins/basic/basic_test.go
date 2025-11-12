@@ -29,28 +29,28 @@ func TestBasicMapper_MapWithPlans(t *testing.T) {
 	}{
 		{
 			name:           "compliance status is passed",
-			status:         api.EvidencePolicyEvaluationStatusPassed,
-			expectedStatus: api.COMPLIANT,
+			status:         api.Passed,
+			expectedStatus: api.ComplianceStatusCompliant,
 		},
 		{
 			name:           "compliance status is failed",
-			status:         api.EvidencePolicyEvaluationStatusFailed,
-			expectedStatus: api.NONCOMPLIANT,
+			status:         api.Failed,
+			expectedStatus: api.ComplianceStatusNonCompliant,
 		},
 		{
 			name:           "compliance status is not run",
-			status:         api.EvidencePolicyEvaluationStatusNotRun,
-			expectedStatus: api.NOTAPPLICABLE,
+			status:         api.NotRun,
+			expectedStatus: api.ComplianceStatusNotApplicable,
 		},
 		{
 			name:           "compliance status is not applicable",
-			status:         api.EvidencePolicyEvaluationStatusNotApplicable,
-			expectedStatus: api.NOTAPPLICABLE,
+			status:         api.NotApplicable,
+			expectedStatus: api.ComplianceStatusNotApplicable,
 		},
 		{
 			name:           "unmapped compliance status defaults to unknown",
-			status:         api.EvidencePolicyEvaluationStatusUnknown,
-			expectedStatus: api.UNKNOWN,
+			status:         api.Unknown,
+			expectedStatus: api.ComplianceStatusUnknown,
 		},
 	}
 
@@ -127,7 +127,7 @@ func TestBasicMapper_MapUnmapped(t *testing.T) {
 	evidence := api.Evidence{
 		PolicyEngineName:       "test-policy-engine",
 		PolicyRuleId:           "AC-1",
-		PolicyEvaluationStatus: api.EvidencePolicyEvaluationStatusFailed,
+		PolicyEvaluationStatus: api.Failed,
 		Timestamp:              time.Now(),
 	}
 	scope := make(mapper.Scope)
@@ -138,7 +138,7 @@ func TestBasicMapper_MapUnmapped(t *testing.T) {
 	// with only enrichment status set to "unmapped"
 	assert.NotNil(t, compliance)
 	assert.Equal(t, api.ComplianceEnrichmentStatusUnmapped, compliance.EnrichmentStatus)
-	assert.Equal(t, api.UNKNOWN, compliance.Status)
+	assert.Equal(t, api.ComplianceStatusUnknown, compliance.Status)
 }
 
 func TestBasicMapper_AddEvaluationPlan(t *testing.T) {

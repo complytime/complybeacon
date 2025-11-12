@@ -118,8 +118,8 @@ components:
             requirements: ["AC-1", "CC6.1"]
           risk:
             level: "High"
-          status: "NON_COMPLIANT"
-          enrichmentStatus: "success"
+          status: "Non-Compliant"
+          enrichmentStatus: "Success"
 
 # Inspired by: https://schema.ocsf.io/1.5.0/objects/compliance
     Compliance:
@@ -136,18 +136,18 @@ components:
         status:
           type: string
           enum:
-            - COMPLIANT
-            - NON_COMPLIANT
-            - EXEMPT
-            - NOT_APPLICABLE
-            - UNKNOWN
+            - Compliant
+            - Non-Compliant
+            - Exempt
+            - Not Applicable
+            - Unknown
           description: "Compliance status"
-          example: "NON_COMPLIANT"
+          example: "Non-Compliant"
         enrichmentStatus:
           type: string
-          description: "Status of the compliance enrichment process: success, unmapped, partial, or unknown."
-          enum: ["success", "unmapped", "partial", "unknown", "skipped"]
-          example: "success"
+          description: "Status of the compliance enrichment process: Success, Unmapped, Partial, Unknown, or Skipped."
+          enum: ["Success", "Unmapped", "Partial", "Unknown", "Skipped"]
+          example: "Success"
       additionalProperties: false
       required:
         - control

@@ -9,20 +9,20 @@ import (
 
 // Defines values for ComplianceEnrichmentStatus.
 const (
-	ComplianceEnrichmentStatusPartial  ComplianceEnrichmentStatus = "partial"
-	ComplianceEnrichmentStatusSkipped  ComplianceEnrichmentStatus = "skipped"
-	ComplianceEnrichmentStatusSuccess  ComplianceEnrichmentStatus = "success"
-	ComplianceEnrichmentStatusUnknown  ComplianceEnrichmentStatus = "unknown"
-	ComplianceEnrichmentStatusUnmapped ComplianceEnrichmentStatus = "unmapped"
+	ComplianceEnrichmentStatusPartial  ComplianceEnrichmentStatus = "Partial"
+	ComplianceEnrichmentStatusSkipped  ComplianceEnrichmentStatus = "Skipped"
+	ComplianceEnrichmentStatusSuccess  ComplianceEnrichmentStatus = "Success"
+	ComplianceEnrichmentStatusUnknown  ComplianceEnrichmentStatus = "Unknown"
+	ComplianceEnrichmentStatusUnmapped ComplianceEnrichmentStatus = "Unmapped"
 )
 
 // Defines values for ComplianceStatus.
 const (
-	COMPLIANT     ComplianceStatus = "COMPLIANT"
-	EXEMPT        ComplianceStatus = "EXEMPT"
-	NONCOMPLIANT  ComplianceStatus = "NON_COMPLIANT"
-	NOTAPPLICABLE ComplianceStatus = "NOT_APPLICABLE"
-	UNKNOWN       ComplianceStatus = "UNKNOWN"
+	ComplianceStatusCompliant     ComplianceStatus = "Compliant"
+	ComplianceStatusExempt        ComplianceStatus = "Exempt"
+	ComplianceStatusNonCompliant  ComplianceStatus = "Non-Compliant"
+	ComplianceStatusNotApplicable ComplianceStatus = "Not Applicable"
+	ComplianceStatusUnknown       ComplianceStatus = "Unknown"
 )
 
 // Defines values for ComplianceRiskLevel.
@@ -36,12 +36,12 @@ const (
 
 // Defines values for EvidencePolicyEvaluationStatus.
 const (
-	EvidencePolicyEvaluationStatusFailed        EvidencePolicyEvaluationStatus = "Failed"
-	EvidencePolicyEvaluationStatusNeedsReview   EvidencePolicyEvaluationStatus = "Needs Review"
-	EvidencePolicyEvaluationStatusNotApplicable EvidencePolicyEvaluationStatus = "Not Applicable"
-	EvidencePolicyEvaluationStatusNotRun        EvidencePolicyEvaluationStatus = "Not Run"
-	EvidencePolicyEvaluationStatusPassed        EvidencePolicyEvaluationStatus = "Passed"
-	EvidencePolicyEvaluationStatusUnknown       EvidencePolicyEvaluationStatus = "Unknown"
+	Failed        EvidencePolicyEvaluationStatus = "Failed"
+	NeedsReview   EvidencePolicyEvaluationStatus = "Needs Review"
+	NotApplicable EvidencePolicyEvaluationStatus = "Not Applicable"
+	NotRun        EvidencePolicyEvaluationStatus = "Not Run"
+	Passed        EvidencePolicyEvaluationStatus = "Passed"
+	Unknown       EvidencePolicyEvaluationStatus = "Unknown"
 )
 
 // Compliance Compliance details from OCSF Security Control Profile.
@@ -49,7 +49,7 @@ type Compliance struct {
 	// Control Security control information for compliance assessment
 	Control ComplianceControl `json:"control"`
 
-	// EnrichmentStatus Status of the compliance enrichment process: success, unmapped, partial, or unknown.
+	// EnrichmentStatus Status of the compliance enrichment process: Success, Unmapped, Partial, Unknown, or Skipped.
 	EnrichmentStatus ComplianceEnrichmentStatus `json:"enrichmentStatus"`
 
 	// Frameworks Compliance framework and requirement information
@@ -62,7 +62,7 @@ type Compliance struct {
 	Status ComplianceStatus `json:"status"`
 }
 
-// ComplianceEnrichmentStatus Status of the compliance enrichment process: success, unmapped, partial, or unknown.
+// ComplianceEnrichmentStatus Status of the compliance enrichment process: Success, Unmapped, Partial, Unknown, or Skipped.
 type ComplianceEnrichmentStatus string
 
 // ComplianceStatus Compliance status

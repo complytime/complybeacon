@@ -41,9 +41,6 @@ func (o OCSFEvidence) Attributes() []attribute.KeyValue {
 	}
 
 	attrs := []attribute.KeyValue{
-		// OCSF Standard Attributes (for interoperability)
-		attribute.Int("ocsf.category.uid", int(o.CategoryUid)),
-		attribute.Int("ocsf.class.uid", int(o.ClassUid)),
 
 		attribute.String(POLICY_RULE_ID, stringVal(o.Policy.Uid, "unknown_policy_id")),
 		attribute.String(POLICY_RULE_NAME, stringVal(o.Policy.Name, "unknown_policy_name")),
@@ -108,18 +105,27 @@ func mapEnforcementAction(actionID *int32, dispositionID *int32) string {
 	}
 }
 
-// mapEnforcementStatus maps OCSF dispositions to a simple success/fail for GRC.
+// mapEnforcementStatus maps OCSF dispositions to remediation status.
+// Valid enum values: Success, Fail, Skipped, Unknown
 func mapEnforcementStatus(actionID *int32, dispositionID *int32) string {
 	if actionID == nil {
-		return "Allow" // Notify/no action is a successful state
+		return "Skipped" // No action taken - remediation was skipped
 	}
+	// Successful enforcement actions
 	if *actionID == 2 && dispositionID != nil && (*dispositionID == 2 || *dispositionID == 6) { // Blocked, Dropped
-		return "Block" // A successful block
+		return "Success" // Successfully blocked the action
 	}
 	if *actionID == 4 && dispositionID != nil && *dispositionID == 11 { // Corrected
-		return "Remediate"
+		return "Success" // Successfully remediated the issue
 	}
-	// Default to a fail or unknown for other cases
+	// Failed enforcement actions
+	if *actionID == 2 && dispositionID != nil && *dispositionID != 2 && *dispositionID != 6 {
+		return "Fail" // Block attempted but failed
+	}
+	if *actionID == 4 && dispositionID != nil && *dispositionID != 11 {
+		return "Fail" // Remediation attempted but failed
+	}
+	// Default to unknown for other cases
 	return "Unknown"
 }
 

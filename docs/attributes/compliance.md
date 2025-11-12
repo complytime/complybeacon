@@ -14,13 +14,48 @@ Attributes added by compliance assessment tools to map policy results to complia
 | <a id="compliance-control-catalog-id" href="#compliance-control-catalog-id">`compliance.control.catalog.id`</a> | string | Unique identifier for the security control catalog or framework. | `OSPS-B`; `CCC`; `CIS` | ![Development](https://img.shields.io/badge/-development-blue) |
 | <a id="compliance-control-category" href="#compliance-control-category">`compliance.control.category`</a> | string | Category or family that the security control belongs to. | `Access Control`; `Quality` | ![Development](https://img.shields.io/badge/-development-blue) |
 | <a id="compliance-control-id" href="#compliance-control-id">`compliance.control.id`</a> | string | Unique identifier for the security control and assessment requirement being assessed. | `OSPS-QA-07.01` | ![Development](https://img.shields.io/badge/-development-blue) |
-| <a id="compliance-enrichment-status" href="#compliance-enrichment-status">`compliance.enrichment.status`</a> | string | Status of the compliance enrichment process: success, unmapped, partial, or unknown. | `success`; `unmapped`; `partial`; `unknown` | ![Development](https://img.shields.io/badge/-development-blue) |
+| <a id="compliance-enrichment-status" href="#compliance-enrichment-status">`compliance.enrichment.status`</a> | string | Status of the compliance enrichment process: Success, Unmapped, Partial, Unknown, or Skipped. | `Success`; `Unmapped`; `Partial` | ![Development](https://img.shields.io/badge/-development-blue) |
 | <a id="compliance-frameworks" href="#compliance-frameworks">`compliance.frameworks`</a> | string[] | Regulatory or industry standards being evaluated for compliance. | `["NIST-800-53", "ISO-27001"]` | ![Development](https://img.shields.io/badge/-development-blue) |
-| <a id="compliance-remediation-action" href="#compliance-remediation-action">`compliance.remediation.action`</a> | string | Action taken by the policy engine: Block, Allow, Remediate, Waive, Notify, or Unknown. | `Block`; `Allow`; `Remediate`; `Waive`; `Notify`; `Unknown` | ![Development](https://img.shields.io/badge/-development-blue) |
+| <a id="compliance-remediation-action" href="#compliance-remediation-action">`compliance.remediation.action`</a> | string | Action taken by the policy engine: Block, Allow, Remediate, Waive, Notify, or Unknown. | `Block`; `Allow`; `Remediate` | ![Development](https://img.shields.io/badge/-development-blue) |
 | <a id="compliance-remediation-description" href="#compliance-remediation-description">`compliance.remediation.description`</a> | string | Description of the recommended remediation strategy for this control. | `This is a short description of the remediation strategy for this control.` | ![Development](https://img.shields.io/badge/-development-blue) |
-| <a id="compliance-remediation-exception-active" href="#compliance-remediation-exception-active">`compliance.remediation.exception.active`</a> | boolean | Whether the exception was is active for this enforcement. | `true`; `false` | ![Development](https://img.shields.io/badge/-development-blue) |
+| <a id="compliance-remediation-exception-active" href="#compliance-remediation-exception-active">`compliance.remediation.exception.active`</a> | boolean | Whether the exception is active for this enforcement. | `true`; `false` | ![Development](https://img.shields.io/badge/-development-blue) |
 | <a id="compliance-remediation-exception-id" href="#compliance-remediation-exception-id">`compliance.remediation.exception.id`</a> | string | Unique identifier for the approved exception, if applicable. | `EX-2025-10-001`; `WAIVE-AC-1-001` | ![Development](https://img.shields.io/badge/-development-blue) |
-| <a id="compliance-remediation-status" href="#compliance-remediation-status">`compliance.remediation.status`</a> | string | Result of the policy enforcement action. | `Success`; `Fail`; `Skipped`; `Unknown` | ![Development](https://img.shields.io/badge/-development-blue) |
+| <a id="compliance-remediation-status" href="#compliance-remediation-status">`compliance.remediation.status`</a> | string | Result of the policy enforcement action. | `Success`; `Fail`; `Skipped` | ![Development](https://img.shields.io/badge/-development-blue) |
 | <a id="compliance-requirements" href="#compliance-requirements">`compliance.requirements`</a> | string[] | Compliance requirement identifiers from the frameworks impacted. | `["AC-1", "A.9.1.1"]` | ![Development](https://img.shields.io/badge/-development-blue) |
-| <a id="compliance-risk-level" href="#compliance-risk-level">`compliance.risk.level`</a> | string | Risk level associated with non-compliance: Critical, High, Medium, Low, or Informational. | `Critical`; `High`; `Medium`; `Low`; `Informational` | ![Development](https://img.shields.io/badge/-development-blue) |
-| <a id="compliance-status" href="#compliance-status">`compliance.status`</a> | string | Compliance verdict: COMPLIANT, NON_COMPLIANT, EXEMPT, NOT_APPLICABLE, or UNKNOWN. | `COMPLIANT`; `NON_COMPLIANT`; `EXEMPT`; `NOT_APPLICABLE`; `UNKNOWN` | ![Development](https://img.shields.io/badge/-development-blue) |
+| <a id="compliance-risk-level" href="#compliance-risk-level">`compliance.risk.level`</a> | string | Risk level associated with non-compliance: Critical, High, Medium, Low, or Informational. | `Critical`; `High`; `Medium` | ![Development](https://img.shields.io/badge/-development-blue) |
+| <a id="compliance-status" href="#compliance-status">`compliance.status`</a> | string | Compliance verdict: Compliant, Non-Compliant, Exempt, Not Applicable, or Unknown. | `Compliant`; `Non-Compliant`; `Exempt` | ![Development](https://img.shields.io/badge/-development-blue) |
+
+---
+
+`compliance.enrichment.status` has the following list of well-known values. If one of them applies, then the respective value MUST be used; otherwise, a custom value MAY be used.
+
+| Value  | Description | Stability |
+|---|---|---|
+
+---
+
+`compliance.remediation.action` has the following list of well-known values. If one of them applies, then the respective value MUST be used; otherwise, a custom value MAY be used.
+
+| Value  | Description | Stability |
+|---|---|---|
+
+---
+
+`compliance.remediation.status` has the following list of well-known values. If one of them applies, then the respective value MUST be used; otherwise, a custom value MAY be used.
+
+| Value  | Description | Stability |
+|---|---|---|
+
+---
+
+`compliance.risk.level` has the following list of well-known values. If one of them applies, then the respective value MUST be used; otherwise, a custom value MAY be used.
+
+| Value  | Description | Stability |
+|---|---|---|
+
+---
+
+`compliance.status` has the following list of well-known values. If one of them applies, then the respective value MUST be used; otherwise, a custom value MAY be used.
+
+| Value  | Description | Stability |
+|---|---|---|
