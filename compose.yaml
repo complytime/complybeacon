@@ -54,12 +54,21 @@ services:
       - "8081:8081"
 
   collector:
+    environment:
+      - AWS_REGION=${AWS_REGION}
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+      - S3_BUCKETNAME=${S3_BUCKETNAME}
+      - S3_OBJ_DIR=${S3_OBJ_DIR}
     image: ghcr.io/complytime/complybeacon-beacon-distro:latest
     build:
       context: ./beacon-distro
       dockerfile: Containerfile.collector
     restart: unless-stopped
     command: ["--config=/etc/otel-collector.yaml"]
+    dns:
+      - 1.1.1.1
+      - 8.8.8.8
     volumes:
       - ./hack/demo/demo-config.yaml:/etc/otel-collector.yaml:Z
       - ./data:/data:Z

@@ -62,8 +62,9 @@ exporters:
       insecure: true
   awss3/logs:
     s3uploader:
-      region: 'us-east-1'
-      s3_bucket: 'otel-data-backup'
+      region: ${AWS_REGION}
+      s3_bucket: ${S3_BUCKETNAME}
+      s3_prefix: ${S3_OBJ_DIR}
 
 service:
   pipelines:
@@ -78,4 +79,4 @@ service:
     logs/analysis_pipeline:
       receivers: [ webhookevent, otlp ]
       processors: [ batch, transform/ocsf, truthbeam ]
-      exporters: [ debug, otlphttp/logs ]
+      exporters: [ debug, otlphttp/logs, awss3/logs ]

@@ -55,8 +55,8 @@ The ComplyBeacon architecture is centered around a unified enrichment pipeline t
 │   │      OpenTelemetry        │                    │            │            │                                    │
 │   │      Collector Agent      │                    │   ┌────────┴─────────┐  │                                    │
 │   │                           │                    │   │    Exporter      │  │                                    │
-│   │                           │                    │   │   (e.g. Loki     │  │                                    │
-│   │                           │                    │   │   Splunk)        │  │                                    │
+│   │                           │                    │   │   (e.g. Loki,    │  │                                    │
+│   │                           │                    │   │   Splunk, AWSS3) │  │                                    │
 │   │                           │                    │   └──────────────────┘  │                                    │
 │   │                           │                    └─────────────────────────┘                                    │
 │   └───────────────────────────┘                                                                                   │
