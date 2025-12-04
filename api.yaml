@@ -4,9 +4,11 @@ info:
   title: Compass Service API
   version: 0.1.0
   description: |
-    API for the Compass service. This service provides control-based attribute enrichment for telemetry data,
-    leveraging internal domain logic and the Compass project's compliance knowledge.
-    It's designed to be called by an OpenTelemetry Collector's custom processor to enrich logs, metrics, and traces.
+    A centralized compliance metadata server that provides policy-to-compliance mappings,
+    control frameworks, and risk assessments for policy-as-code workflows. This service serves as 
+    the authoritative source for compliance metadata, enabling OpenTelemetry collectors and other 
+    systems to enrich policy evaluation events with standardized compliance context, 
+    regulatory mappings, and risk classifications.
 
 paths:
   /v1/enrich:
@@ -42,64 +44,14 @@ components:
       type: object
       description: Request payload for telemetry attribute enrichment
       properties:
-        evidence:
-          $ref: '#/components/schemas/Evidence'
+        policy:
+          $ref: '#/components/schemas/Policy'
       required:
-        - evidence
-      example:
-        evidence:
-          timestamp: "2024-01-15T10:30:00Z"
-          policyEngineName: "OPA"
-          policyRuleId: "deny-root-user"
-          policyEvaluationStatus: "Failed"
-          rawData:
-            result: "deny"
-            reason: "Root user access is not allowed"
-    Evidence:
-      type: object
-      description: "Complete evidence log from policy engines and compliance assessment tools"
-      properties:
-        timestamp:
-          type: string
-          format: date-time
-          description: The time when the raw evidence was generated
-          example: "2024-01-15T10:30:00Z"
-
-        # Policy Engine Identity
-        policyEngineName:
-          type: string
-          description: Name of the policy engine that performed the evaluation or enforcement action
-          example: "OPA"
-        policyRuleId:
-          type: string
-          description: Unique identifier for the policy rule being evaluated or enforced
-          example: "deny-root-user"
-        
-        # Policy Evaluation
-        policyEvaluationStatus:
-          type: string
-          enum: ["Not Run", "Passed", "Failed", "Needs Review", "Not Applicable", "Unknown"]
-          description: Result of the policy evaluation
-          example: "Failed"
-        
-        rawData:
-          type: object
-          description: Raw JSON output from the policy engine
-          example:
-            result: "deny"
-            reason: "Root user access is not allowed"
-            metadata:
-              timestamp: "2024-01-15T10:30:00Z"
-              version: "1.0"
-      required:
-        - timestamp
-        - policyEngineName
-        - policyRuleId
-        - policyEvaluationStatus
+        - policy
 
     EnrichmentResponse:
       type: object
-      description: "Enriched compliance finding with risk attributes and threat mappings."
+      description: "Complete compliance metadata including control mappings, frameworks, risk assessment."
       properties:
         compliance:
           $ref: '#/components/schemas/Compliance'
@@ -118,10 +70,24 @@ components:
             requirements: ["AC-1", "CC6.1"]
           risk:
             level: "High"
-          status: "Non-Compliant"
           enrichmentStatus: "Success"
 
-# Inspired by: https://schema.ocsf.io/1.5.0/objects/compliance
+    Policy:
+      type: object
+      description: "Complete evidence log from policy engines and compliance assessment tools"
+      properties:
+        policyEngineName:
+          type: string
+          description: Name of the policy engine that performed the evaluation or enforcement action
+          example: "OPA"
+        policyRuleId:
+          type: string
+          description: Unique identifier for the policy rule being evaluated or enforced
+          example: "deny-root-user"
+      required:
+        - policyEngineName
+        - policyRuleId
+
     Compliance:
       type: object
       title: "Compliance"
@@ -133,16 +99,6 @@ components:
           $ref: '#/components/schemas/ComplianceFrameworks'
         risk:
           $ref: '#/components/schemas/ComplianceRisk'
-        status:
-          type: string
-          enum:
-            - Compliant
-            - Non-Compliant
-            - Exempt
-            - Not Applicable
-            - Unknown
-          description: "Compliance status"
-          example: "Non-Compliant"
         enrichmentStatus:
           type: string
           description: "Status of the compliance enrichment process: Success, Unmapped, Partial, Unknown, or Skipped."
@@ -152,7 +108,6 @@ components:
       required:
         - control
         - frameworks
-        - status
         - enrichmentStatus
 
     # Compliance Control Schema
@@ -218,6 +173,8 @@ components:
           enum: ["Critical", "High", "Medium", "Low", "Informational"]
           description: Risk level associated with non-compliance
           example: "High"
+      required:
+        - level
 
     Error:
       type: object

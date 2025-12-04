@@ -2,7 +2,6 @@ package mapper
 
 import (
 	"testing"
-	"time"
 
 	"github.com/ossf/gemara/layer2"
 	"github.com/ossf/gemara/layer4"
@@ -21,10 +20,10 @@ func (m *mockMapper) PluginName() ID {
 	return m.id
 }
 
-func (m *mockMapper) Map(evidence api.Evidence, scope Scope) api.Compliance {
+func (m *mockMapper) Map(policy api.Policy, scope Scope) api.Compliance {
 	return api.Compliance{
 		Control: api.ComplianceControl{
-			Id:        evidence.PolicyRuleId,
+			Id:        policy.PolicyRuleId,
 			Category:  "test-category",
 			CatalogId: "test-catalog",
 		},
@@ -32,8 +31,7 @@ func (m *mockMapper) Map(evidence api.Evidence, scope Scope) api.Compliance {
 			Requirements: []string{"req-1"},
 			Frameworks:   []string{"NIST-800-53"},
 		},
-		Status:           api.ComplianceStatusCompliant,
-		EnrichmentStatus: api.ComplianceEnrichmentStatusSuccess,
+		EnrichmentStatus: api.Success,
 	}
 }
 
@@ -150,18 +148,15 @@ func TestMapperInterfaceAndIDType(t *testing.T) {
 
 		assert.Equal(t, ID("test-mapper"), mapper.PluginName())
 
-		evidence := api.Evidence{
-			PolicyEngineName:       "test-policy-engine",
-			PolicyRuleId:           "AC-1",
-			PolicyEvaluationStatus: api.Passed,
-			Timestamp:              time.Now(),
+		evidence := api.Policy{
+			PolicyEngineName: "test-policy-engine",
+			PolicyRuleId:     "AC-1",
 		}
 		scope := make(Scope)
 
 		compliance := mapper.Map(evidence, scope)
 		assert.Equal(t, "test-catalog", compliance.Control.CatalogId)
 		assert.Equal(t, "AC-1", compliance.Control.Id)
-		assert.Equal(t, api.ComplianceStatusCompliant, compliance.Status)
 
 		plans := []layer4.AssessmentPlan{
 			{Control: layer4.Mapping{ReferenceId: "AC-1"}},

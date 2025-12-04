@@ -32,8 +32,13 @@ func createDefaultConfig() component.Config {
 	// We almost read 0 bytes, so no need to tune ReadBufferSize.
 	clientConfig.WriteBufferSize = 512 * 1024
 
+	// Default cache TTL: -1 (no expiration) due to typical frequency of data changes.
+	// Users can set a TTL if they need expiration.
+	defaultCacheTTL := time.Duration(-1)
+
 	return &Config{
 		ClientConfig: clientConfig,
+		CacheTTL:     defaultCacheTTL,
 	}
 }
 

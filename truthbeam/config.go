@@ -2,6 +2,7 @@ package truthbeam
 
 import (
 	"errors"
+	"time"
 
 	"go.opentelemetry.io/collector/component"
 	"go.opentelemetry.io/collector/config/confighttp"
@@ -9,7 +10,8 @@ import (
 
 // Config defines configuration for the truthbeam processor.
 type Config struct {
-	ClientConfig confighttp.ClientConfig `mapstructure:",squash"` // squash ensures fields are correctly decoded in embedded struct.
+	ClientConfig confighttp.ClientConfig `mapstructure:",squash"`   // squash ensures fields are correctly decoded in embedded struct.
+	CacheTTL     time.Duration           `mapstructure:"cache_ttl"` // Cache TTL for compliance metadata
 }
 
 var _ component.Config = (*Config)(nil)

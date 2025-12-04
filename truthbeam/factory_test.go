@@ -27,6 +27,7 @@ func TestCreateDefaultConfig(t *testing.T) {
 	assert.Equal(t, 30*time.Second, cfg.ClientConfig.Timeout, "Expected timeout 30s")
 	assert.Empty(t, cfg.ClientConfig.Compression, "Expected compression to be disabled by default for small payloads")
 	assert.Equal(t, 512*1024, cfg.ClientConfig.WriteBufferSize, "Expected write buffer size 512KB")
+	assert.Equal(t, time.Duration(-1), cfg.CacheTTL, "Expected default cache TTL to be 0 (no expiration)")
 }
 
 func TestCreateLogsProcessor(t *testing.T) {

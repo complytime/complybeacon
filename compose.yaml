@@ -38,7 +38,6 @@ services:
         /run.sh
 
   compass:
-    image: ghcr.io/complytime/complybeacon-compass:latest
     build:
       context: .
       dockerfile: ./compass/images/Containerfile.compass
@@ -60,7 +59,6 @@ services:
       - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
       - S3_BUCKETNAME=${S3_BUCKETNAME}
       - S3_OBJ_DIR=${S3_OBJ_DIR}
-    image: ghcr.io/complytime/complybeacon-beacon-distro:latest
     build:
       context: ./beacon-distro
       dockerfile: Containerfile.collector

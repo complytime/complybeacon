@@ -1,6 +1,7 @@
 package service
 
 import (
+	"log"
 	"log/slog"
 	"net/http"
 
@@ -14,15 +15,17 @@ import (
 
 // Service struct to hold dependencies if needed
 type Service struct {
-	set   mapper.Set
-	scope mapper.Scope
+	set     mapper.Set
+	scope   mapper.Scope
+	version string
 }
 
 // NewService initializes a new Service instance.
 func NewService(transformers mapper.Set, scope mapper.Scope) *Service {
 	return &Service{
-		set:   transformers,
-		scope: scope,
+		set:     transformers,
+		scope:   scope,
+		version: "1.0.0",
 	}
 }
 
@@ -42,17 +45,14 @@ func (s *Service) PostV1Enrich(c *gin.Context) {
 
 	slog.Debug("enrich request received",
 		slog.String("request_id", requestid.Get(c)),
-		slog.String("policy_rule_id", req.Evidence.PolicyRuleId),
-		slog.String("policy_engine_name", req.Evidence.PolicyEngineName),
-		slog.String("timestamp", req.Evidence.Timestamp.String()),
+		slog.String("policy_rule_id", req.Policy.PolicyRuleId),
+		slog.String("policy_engine_name", req.Policy.PolicyEngineName),
 	)
 
-	mapperPlugin, ok := s.set[mapper.ID(req.Evidence.PolicyEngineName)]
+	mapperPlugin, ok := s.set[mapper.ID(req.Policy.PolicyEngineName)]
 	if !ok {
 		// Use fallback
-		slog.Warn("mapper not found; using basic mapper fallback",
-			slog.String("policy_engine_name", req.Evidence.PolicyEngineName),
-		)
+		log.Printf("WARNING: Policy engine %s not found in mapper set, using basic mapper fallback", req.Policy.PolicyEngineName)
 		mapperPlugin = basic.NewBasicMapper()
 	}
 
@@ -62,11 +62,14 @@ func (s *Service) PostV1Enrich(c *gin.Context) {
 		slog.Bool("fallback_used", !ok),
 	)
 
-	enrichedResponse := enrich(req.Evidence, mapperPlugin, s.scope)
+	compliance := mapperPlugin.Map(req.Policy, s.scope)
+	enrichedResponse := api.EnrichmentResponse{
+		Compliance: compliance,
+	}
 
 	slog.Debug("enrich result",
 		slog.String("request_id", requestid.Get(c)),
-		slog.String("compliance_status", string(enrichedResponse.Compliance.Status)),
+		slog.String("mapping_status", string(enrichedResponse.Compliance.EnrichmentStatus)),
 		slog.String("compliance_catalog", enrichedResponse.Compliance.Control.CatalogId),
 		slog.String("compliance_control", enrichedResponse.Compliance.Control.Id),
 	)
@@ -82,12 +85,4 @@ func sendCompassError(c *gin.Context, code int32, message string) {
 		Message: message,
 	}
 	c.JSON(int(code), compassErr)
-}
-
-// Enrich the raw evidence with risk attributes based on `gemara` semantics.
-func enrich(rawEnv api.Evidence, attributeMapper mapper.Mapper, scope mapper.Scope) api.EnrichmentResponse {
-	compliance := attributeMapper.Map(rawEnv, scope)
-	return api.EnrichmentResponse{
-		Compliance: compliance,
-	}
 }
